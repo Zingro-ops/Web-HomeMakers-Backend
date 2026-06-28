@@ -1,0 +1,11 @@
+node_modules/
+.env
+.env.example
+cookies.txt
+*.json.tmp
+d.json
+otp.json
+body.json
+s.json
+npm-debug.log*
+.DS_Store
