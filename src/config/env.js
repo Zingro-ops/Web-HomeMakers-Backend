@@ -20,4 +20,6 @@ export const env = {
   s3Bucket: process.env.S3_BUCKET,
   s3PresignExpires: Number(process.env.S3_PRESIGN_EXPIRES) || 300,
   gpsToleranceM: Number(process.env.GPS_TOLERANCE_METERS) || 500,
+  // add to the exported env object
+  zingroJwtSecret: process.env.ZINGRO_JWT_SECRET,
 };

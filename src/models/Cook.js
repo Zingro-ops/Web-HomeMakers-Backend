@@ -4,15 +4,8 @@ const { Schema } = mongoose;
 
 const cookSchema = new Schema(
   {
-    phone: { type: String, required: true, unique: true, index: true },
-    email: { type: String, required: true, unique: true, index: true },
-    passwordHash: { type: String, required: true },
-
-    otp: {
-      code: String,
-      expiresAt: Date,
-      verified: { type: Boolean, default: false },
-    },
+    zingroUserId: { type: String, required: true, unique: true, index: true },
+    phone: { type: String, required: true, index: true },
 
     status: {
       type: String,
@@ -26,7 +19,6 @@ const cookSchema = new Schema(
       default: "draft",
       index: true,
     },
-    role: { type: String, enum: ["cook", "admin"], default: "cook" },
     currentStep: { type: Number, default: 1 },
     personal: { name: String, gender: String },
     address: { building: String, locality: String, pincode: String },
