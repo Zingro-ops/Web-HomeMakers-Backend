@@ -6,7 +6,7 @@ import { submitOnboarding } from "../services/submit.service.js";
 export async function saveDraft(req, res, next) {
   try {
     const { step, data } = draftSchema.parse(req.body);
-    const parsed = stepSchemas[step].parse(data);
+    const parsed = stepSchemas[step].parse(data); // re-validate per-step server-side
     const result = await svc.saveDraft(req.cookId, step, parsed);
     res.json(result);
   } catch (e) {
