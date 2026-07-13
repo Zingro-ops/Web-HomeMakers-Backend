@@ -6,6 +6,7 @@ const cookSchema = new Schema(
   {
     zingroUserId: { type: String, required: true, unique: true, index: true },
     phone: { type: String, required: true, index: true },
+    email: { type: String, trim: true, lowercase: true, default: null }, // ADD THIS
 
     status: {
       type: String,
