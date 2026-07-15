@@ -26,11 +26,11 @@ export function createApp() {
 
   app.use("/api/admin", adminRoutes);
 
-  app.use(notFound);
-  app.use(errorHandler);
   app.use("/api/menu", menuRoutes);
   app.use("/api/public", publicRoutes);
   app.use("/api/orders", orderRoutes);
   app.use("/api/cook/orders", cookOrdersRoutes);
+  app.use(notFound);
+  app.use(errorHandler);
   return app;
 }
