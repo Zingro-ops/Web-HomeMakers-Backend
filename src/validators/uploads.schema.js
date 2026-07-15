@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const presignSchema = z.object({
-  type: z.enum(["kitchen", "profile"]),
+  type: z.enum(["kitchen", "profile", "dish"]),
   contentType: z.enum(["image/jpeg", "image/png"]),
 });
 

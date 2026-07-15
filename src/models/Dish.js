@@ -15,6 +15,7 @@ const dishSchema = new Schema(
     desc: { type: String, trim: true, default: "" },
     tag: { type: String, default: null },
     available: { type: Boolean, default: true },
+    image_s3_key: { type: String, default: null }, // ADD THIS
   },
   { timestamps: true },
 );

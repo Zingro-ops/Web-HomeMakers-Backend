@@ -1,6 +1,7 @@
 import { Cook } from "../models/Cook.js";
 import { Dish } from "../models/Dish.js";
 import { distanceMeters } from "../utils/geo.js";
+import { presignGet } from "./s3.service.js";
 
 const PUBLIC_COOK_FIELDS =
   "personal.name food.cuisine food.category food.description food.radius photos.gps status";
@@ -42,9 +43,17 @@ export async function getCookMenu(cookId) {
   );
   if (!cook) throw Object.assign(new Error("Cook not found"), { status: 404 });
 
-  const dishes = await Dish.find({ cookId, available: true }).select(
-    "name category price desc tag",
+  const dishes = await Dish.find({ cookId, available: true })
+    .select("name category price desc tag image_s3_key")
+    .lean();
+
+  const withUrls = await Promise.all(
+    dishes.map(async (d) => {
+      if (d.image_s3_key) d.imageUrl = await presignGet(d.image_s3_key);
+      delete d.image_s3_key;
+      return d;
+    }),
   );
 
-  return { cook, dishes };
+  return { cook, dishes: withUrls };
 }
