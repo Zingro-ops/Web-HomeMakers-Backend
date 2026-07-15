@@ -5,6 +5,7 @@ export const createDishSchema = z.object({
   category: z.string().trim().min(1),
   price: z.coerce.number().min(0).max(100000),
   desc: z.string().trim().max(500).optional().default(""),
+  imageKey: z.string().min(5).optional(),
 });
 
 export const updateDishSchema = z.object({
@@ -13,4 +14,5 @@ export const updateDishSchema = z.object({
   price: z.coerce.number().min(0).max(100000).optional(),
   desc: z.string().trim().max(500).optional(),
   available: z.boolean().optional(),
+  imageKey: z.string().min(5).optional(),
 });
