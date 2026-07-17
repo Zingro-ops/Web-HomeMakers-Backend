@@ -11,6 +11,7 @@ import menuRoutes from "./routes/menu.routes.js";
 import publicRoutes from "./routes/public.routes.js";
 import orderRoutes from "./routes/order.routes.js";
 import cookOrdersRoutes from "./routes/cookOrders.routes.js";
+import dashboardRoutes from "./routes/dashboard.routes.js";
 
 export function createApp() {
   const app = express();
@@ -41,6 +42,8 @@ export function createApp() {
   app.use("/api/public", publicRoutes);
   app.use("/api/orders", orderRoutes);
   app.use("/api/cook/orders", cookOrdersRoutes);
+  app.use("/api/dashboard", dashboardRoutes);
+
   app.use(notFound);
   app.use(errorHandler);
   return app;

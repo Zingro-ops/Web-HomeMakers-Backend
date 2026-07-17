@@ -11,6 +11,13 @@ export function errorHandler(err, req, res, next) {
   if (err?.code === 11000) {
     return res.status(409).json({ error: "Email or phone already registered" });
   }
+  if (err?.name === "CastError") {
+    return res.status(400).json({ error: "Invalid ID format" });
+  }
+
   console.error(err);
-  res.status(err.status || 500).json({ error: err.message || "Server error" });
+  const statusCode = err.status || err.statusCode || 500;
+  const message =
+    statusCode < 500 && err.message ? err.message : "Something went wrong";
+  res.status(statusCode).json({ error: message });
 }
