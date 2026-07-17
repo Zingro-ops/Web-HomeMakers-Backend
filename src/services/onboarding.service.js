@@ -69,12 +69,13 @@ export async function saveDraft(cookId, step, data) {
 
 export async function getStatus(cookId) {
   const cook = await Cook.findById(cookId).select(
-    "status currentStep tax.verified bank.penny_drop_ok fssai.active tax.gst_verified kyc.decision",
+    "status currentStep personal.name tax.verified bank.penny_drop_ok fssai.active tax.gst_verified kyc.decision",
   );
   if (!cook) throw Object.assign(new Error("Cook not found"), { status: 404 });
   return {
     status: cook.status,
     currentStep: cook.currentStep,
+    name: cook.personal?.name || null,
     verdicts: {
       pan: cook.tax?.verified ?? null,
       bank: cook.bank?.penny_drop_ok ?? null,
