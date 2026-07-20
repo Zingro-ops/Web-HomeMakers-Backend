@@ -2,7 +2,6 @@ import { Order } from "../models/Order.js";
 import { Dish } from "../models/Dish.js";
 import { Cook } from "../models/Cook.js";
 
-const CANCELABLE = ["pending"];
 const TRANSITIONS = {
   pending: ["preparing", "rejected"],
   preparing: ["ready"],
@@ -56,16 +55,8 @@ export async function createOrder(customer, data) {
   });
 }
 
-export async function listCookOrders(
-  cookId,
-  { status, orderType, isCluster, page, limit },
-) {
-  const filter = {
-    cookId,
-    ...(status ? { status } : {}),
-    ...(orderType ? { orderType } : {}),
-    ...(isCluster !== undefined ? { isCluster } : {}),
-  };
+export async function listCustomerOrders(customerId, { page, limit }) {
+  const filter = { customerId };
   const [items, total] = await Promise.all([
     Order.find(filter)
       .sort({ createdAt: -1 })
@@ -77,8 +68,16 @@ export async function listCookOrders(
   return { items, total, page, limit };
 }
 
-export async function listCookOrders(cookId, { status, page, limit }) {
-  const filter = { cookId, ...(status ? { status } : {}) };
+export async function listCookOrders(
+  cookId,
+  { status, orderType, isCluster, page, limit },
+) {
+  const filter = {
+    cookId,
+    ...(status ? { status } : {}),
+    ...(orderType ? { orderType } : {}),
+    ...(isCluster !== undefined ? { isCluster } : {}),
+  };
   const [items, total] = await Promise.all([
     Order.find(filter)
       .sort({ createdAt: -1 })
