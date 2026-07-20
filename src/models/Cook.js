@@ -63,6 +63,11 @@ const cookSchema = new Schema(
       decided_by: String,
       note: String,
     },
+    clusterSettings: {
+      enabled: { type: Boolean, default: false },
+      minQty: { type: Number, default: 20 },
+      discountPercent: { type: Number, default: 10, min: 0, max: 50 },
+    },
     consent: { terms_accepted_at: Date, privacy_accepted_at: Date, ip: String },
   },
   { timestamps: true },
