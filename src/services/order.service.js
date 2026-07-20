@@ -30,22 +30,42 @@ export async function createOrder(customer, data) {
     return { dishId: dish._id, name: dish.name, price: dish.price, qty: i.qty };
   });
 
-  const total = items.reduce((sum, i) => sum + i.price * i.qty, 0);
+  const totalQty = items.reduce((sum, i) => sum + i.qty, 0);
+  const subtotal = items.reduce((sum, i) => sum + i.price * i.qty, 0);
+
+  const cluster = cook.clusterSettings || {};
+  const isCluster =
+    !!cluster.enabled && totalQty >= (cluster.minQty || Infinity);
+  const clusterDiscountPercent = isCluster ? cluster.discountPercent || 0 : 0;
+  const total = Math.round(subtotal * (1 - clusterDiscountPercent / 100));
 
   return Order.create({
     cookId: data.cookId,
     customerId: customer.id,
     customerPhone: customer.phone,
     customerName: data.customerName || null,
+    orderType: data.orderType,
+    scheduledFor: data.scheduledFor || null,
+    isCluster,
+    clusterDiscountPercent,
     items,
+    subtotal,
     total,
     deliveryAddress: data.deliveryAddress,
     notes: data.notes,
   });
 }
 
-export async function listCustomerOrders(customerId, { page, limit }) {
-  const filter = { customerId };
+export async function listCookOrders(
+  cookId,
+  { status, orderType, isCluster, page, limit },
+) {
+  const filter = {
+    cookId,
+    ...(status ? { status } : {}),
+    ...(orderType ? { orderType } : {}),
+    ...(isCluster !== undefined ? { isCluster } : {}),
+  };
   const [items, total] = await Promise.all([
     Order.find(filter)
       .sort({ createdAt: -1 })
