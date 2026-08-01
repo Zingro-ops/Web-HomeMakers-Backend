@@ -18,7 +18,6 @@ export async function listCooks({
   if (cuisine) filter["food.cuisine"] = cuisine;
   if (category) filter["food.category"] = category;
 
-  // Real geospatial query — MongoDB does the distance math and sort, not a JS loop.
   if (lat != null && lng != null) {
     const pipeline = [
       {
@@ -40,11 +39,10 @@ export async function listCooks({
       { $limit: limit },
     ];
     const items = await Cook.aggregate(pipeline);
-    const total = await Cook.countDocuments(filter); // approximate — good enough for pagination UI
+    const total = await Cook.countDocuments(filter);
     return { items, total, page, limit };
   }
 
-  // No location given — plain filtered list, no distance sort.
   const [items, total] = await Promise.all([
     Cook.find(filter)
       .select(PUBLIC_COOK_FIELDS)
