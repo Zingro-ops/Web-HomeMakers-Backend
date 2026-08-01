@@ -6,7 +6,7 @@ const cookSchema = new Schema(
   {
     zingroUserId: { type: String, required: true, unique: true, index: true },
     phone: { type: String, required: true, index: true },
-    email: { type: String, trim: true, lowercase: true, default: null }, // ADD THIS
+    email: { type: String, trim: true, lowercase: true, default: null },
 
     status: {
       type: String,
@@ -69,8 +69,14 @@ const cookSchema = new Schema(
       discountPercent: { type: Number, default: 10, min: 0, max: 50 },
     },
     consent: { terms_accepted_at: Date, privacy_accepted_at: Date, ip: String },
+    location: {
+      type: { type: String, enum: ["Point"], default: "Point" },
+      coordinates: { type: [Number], default: [0, 0] }, // [lng, lat] — GeoJSON order, NOT [lat, lng]
+    },
   },
   { timestamps: true },
 );
+
+cookSchema.index({ location: "2dsphere" });
 
 export const Cook = mongoose.model("Cook", cookSchema);

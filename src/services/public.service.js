@@ -1,40 +1,59 @@
 import { Cook } from "../models/Cook.js";
 import { Dish } from "../models/Dish.js";
-import { distanceMeters } from "../utils/geo.js";
 import { presignGet } from "./s3.service.js";
 
 const PUBLIC_COOK_FIELDS =
-  "personal.name food.cuisine food.category food.description food.radius photos.gps status";
+  "personal.name food.cuisine food.category food.description food.radius photos.gps status location";
 
-export async function listCooks({ lat, lng, radiusKm, page, limit }) {
-  const cooks = await Cook.find({ status: "approved" })
-    .select(PUBLIC_COOK_FIELDS)
-    .lean();
+export async function listCooks({
+  lat,
+  lng,
+  radiusKm,
+  cuisine,
+  category,
+  page,
+  limit,
+}) {
+  const filter = { status: "approved" };
+  if (cuisine) filter["food.cuisine"] = cuisine;
+  if (category) filter["food.category"] = category;
 
-  let filtered = cooks;
+  // Real geospatial query — MongoDB does the distance math and sort, not a JS loop.
   if (lat != null && lng != null) {
-    filtered = cooks
-      .map((c) => {
-        const gps = c.photos?.gps;
-        if (!gps?.lat) return { ...c, distanceMeters: null };
-        return { ...c, distanceMeters: distanceMeters({ lat, lng }, gps) };
-      })
-      .filter(
-        (c) => c.distanceMeters == null || c.distanceMeters <= radiusKm * 1000,
-      )
-      .sort(
-        (a, b) =>
-          (a.distanceMeters ?? Infinity) - (b.distanceMeters ?? Infinity),
-      );
+    const pipeline = [
+      {
+        $geoNear: {
+          near: { type: "Point", coordinates: [lng, lat] },
+          distanceField: "distanceMeters",
+          maxDistance: radiusKm * 1000,
+          spherical: true,
+          query: filter,
+        },
+      },
+      {
+        $project: PUBLIC_COOK_FIELDS.split(" ").reduce(
+          (acc, f) => ({ ...acc, [f]: 1 }),
+          { distanceMeters: 1 },
+        ),
+      },
+      { $skip: (page - 1) * limit },
+      { $limit: limit },
+    ];
+    const items = await Cook.aggregate(pipeline);
+    const total = await Cook.countDocuments(filter); // approximate — good enough for pagination UI
+    return { items, total, page, limit };
   }
 
-  const start = (page - 1) * limit;
-  return {
-    items: filtered.slice(start, start + limit),
-    total: filtered.length,
-    page,
-    limit,
-  };
+  // No location given — plain filtered list, no distance sort.
+  const [items, total] = await Promise.all([
+    Cook.find(filter)
+      .select(PUBLIC_COOK_FIELDS)
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .lean(),
+    Cook.countDocuments(filter),
+  ]);
+  return { items, total, page, limit };
 }
 
 export async function getCookMenu(cookId) {
@@ -56,4 +75,8 @@ export async function getCookMenu(cookId) {
   );
 
   return { cook, dishes: withUrls };
+}
+
+export async function listCuisines() {
+  return Cook.distinct("food.cuisine", { status: "approved" });
 }
