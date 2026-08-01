@@ -17,3 +17,11 @@ export async function getCookMenu(req, res, next) {
     next(e);
   }
 }
+
+export async function listCuisines(req, res, next) {
+  try {
+    res.json(await svc.listCuisines());
+  } catch (e) {
+    next(e);
+  }
+}
