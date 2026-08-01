@@ -39,7 +39,7 @@ function mapStep(step, data) {
       return {
         "photos.gps.lat": data.gps.lat,
         "photos.gps.lng": data.gps.lng,
-        // s3 keys are set by the uploads flow; names are transient hints
+        location: { type: "Point", coordinates: [data.gps.lng, data.gps.lat] },
       };
     default:
       return {};
