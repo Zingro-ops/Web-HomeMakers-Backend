@@ -13,6 +13,7 @@ import orderRoutes from "./routes/order.routes.js";
 import cookOrdersRoutes from "./routes/cookOrders.routes.js";
 import dashboardRoutes from "./routes/dashboard.routes.js";
 import profileRoutes from "./routes/profile.routes.js";
+import cartRoutes from "./routes/cart.routes.js";
 
 export function createApp() {
   const app = express();
@@ -45,7 +46,7 @@ export function createApp() {
   app.use("/api/cook/orders", cookOrdersRoutes);
   app.use("/api/dashboard", dashboardRoutes);
   app.use("/api/profile", profileRoutes);
-
+  app.use("/api/cart", cartRoutes);
   app.use(notFound);
   app.use(errorHandler);
   return app;

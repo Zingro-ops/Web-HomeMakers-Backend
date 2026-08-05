@@ -33,8 +33,7 @@ export async function createOrder(customer, data) {
   const subtotal = items.reduce((sum, i) => sum + i.price * i.qty, 0);
 
   const cluster = cook.clusterSettings || {};
-  const isCluster =
-    !!cluster.enabled && totalQty >= (cluster.minQty || Infinity);
+  const isCluster = !!cluster.enabled && totalQty >= (cluster.minQty || Infinity);
   const clusterDiscountPercent = isCluster ? cluster.discountPercent || 0 : 0;
   const total = Math.round(subtotal * (1 - clusterDiscountPercent / 100));
 
@@ -58,20 +57,13 @@ export async function createOrder(customer, data) {
 export async function listCustomerOrders(customerId, { page, limit }) {
   const filter = { customerId };
   const [items, total] = await Promise.all([
-    Order.find(filter)
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .lean(),
+    Order.find(filter).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).lean(),
     Order.countDocuments(filter),
   ]);
   return { items, total, page, limit };
 }
 
-export async function listCookOrders(
-  cookId,
-  { status, orderType, isCluster, page, limit },
-) {
+export async function listCookOrders(cookId, { status, orderType, isCluster, page, limit }) {
   const filter = {
     cookId,
     ...(status ? { status } : {}),
@@ -79,11 +71,7 @@ export async function listCookOrders(
     ...(isCluster !== undefined ? { isCluster } : {}),
   };
   const [items, total] = await Promise.all([
-    Order.find(filter)
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .lean(),
+    Order.find(filter).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).lean(),
     Order.countDocuments(filter),
   ]);
   return { items, total, page, limit };
@@ -91,8 +79,7 @@ export async function listCookOrders(
 
 export async function updateOrderStatus(cookId, orderId, status) {
   const order = await Order.findOne({ _id: orderId, cookId });
-  if (!order)
-    throw Object.assign(new Error("Order not found"), { status: 404 });
+  if (!order) throw Object.assign(new Error("Order not found"), { status: 404 });
 
   const allowed = TRANSITIONS[order.status] || [];
   if (!allowed.includes(status)) {
