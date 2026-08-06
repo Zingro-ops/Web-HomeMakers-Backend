@@ -14,8 +14,16 @@ export async function createOrder({
   couponCode,
   customerName,
   notes,
+  orderType = "quick",
+  scheduledFor = null,
 }) {
-  const breakdown = await computeBreakdown({ userId, addressId, couponCode });
+  const breakdown = await computeBreakdown({
+    userId,
+    addressId,
+    couponCode,
+    orderType,
+    scheduledFor,
+  });
   const address = await Address.findById(addressId);
 
   const order = await Order.create({
@@ -26,6 +34,10 @@ export async function createOrder({
     items: breakdown.lineItems,
     subtotal: breakdown.subtotal,
     total: breakdown.grandTotal,
+    isCluster: breakdown.isCluster,
+    clusterDiscountPercent: breakdown.clusterDiscountPercent,
+    orderType: breakdown.orderType,
+    scheduledFor: breakdown.scheduledFor,
     deliveryAddress: {
       building: address.line1,
       locality: address.city,
@@ -106,5 +118,3 @@ export async function verifyPayment({
 
   return { orderId: order._id, status: "paid" };
 }
-
-

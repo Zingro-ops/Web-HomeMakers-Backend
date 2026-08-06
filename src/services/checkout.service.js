@@ -9,7 +9,13 @@ import { distanceMeters } from "../utils/geo.js"; // existing file â€” reus
 const round2 = (n) => Math.round(n * 100) / 100;
 const toLatLng = ([lng, lat]) => ({ lat, lng }); // GeoJSON [lng,lat] -> {lat,lng}
 
-export async function computeBreakdown({ userId, addressId, couponCode }) {
+export async function computeBreakdown({
+  userId,
+  addressId,
+  couponCode,
+  orderType = "quick",
+  scheduledFor = null,
+}) {
   const cart = await Cart.findOne({ customerId: userId });
   if (!cart || !cart.items?.length)
     throw Object.assign(new Error("Cart is empty"), {
@@ -58,6 +64,16 @@ export async function computeBreakdown({ userId, addressId, couponCode }) {
   }
   subtotal = round2(subtotal);
 
+  const totalQty = cart.items.reduce((sum, i) => sum + i.qty, 0);
+  const clusterCfg = cook.clusterSettings || {};
+  const isCluster =
+    !!clusterCfg.enabled && totalQty >= (clusterCfg.minQty || Infinity);
+  const clusterDiscountPercent = isCluster
+    ? clusterCfg.discountPercent || 0
+    : 0;
+  if (isCluster)
+    subtotal = round2(subtotal * (1 - clusterDiscountPercent / 100));
+
   const gst = round2((subtotal * RATES.GST_PERCENT) / 100);
   const packingFee = round2((subtotal * RATES.PACKING_PERCENT) / 100);
   const platformFee = round2((subtotal * RATES.PLATFORM_PERCENT) / 100);
@@ -97,6 +113,10 @@ export async function computeBreakdown({ userId, addressId, couponCode }) {
   return {
     cookId: cook._id,
     lineItems,
+    isCluster,
+    clusterDiscountPercent,
+    orderType,
+    scheduledFor,
     subtotal,
     gst,
     packingFee,

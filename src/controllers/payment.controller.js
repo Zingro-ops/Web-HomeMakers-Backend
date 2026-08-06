@@ -1,4 +1,4 @@
-import { z } from "zod";
+﻿import { z } from "zod";
 import * as svc from "../services/payment.service.js";
 import { ok, fail } from "../utils/apiResponse.js";
 
@@ -7,6 +7,8 @@ const createSchema = z.object({
   couponCode: z.string().optional(),
   customerName: z.string(),
   notes: z.string().optional(),
+  orderType: z.enum(["quick", "prebooking"]).optional(),
+  scheduledFor: z.string().datetime().optional(),
 });
 
 const verifySchema = z.object({
@@ -48,3 +50,4 @@ export const verify = wrap(async (req, res) => {
     "Payment verified",
   );
 });
+

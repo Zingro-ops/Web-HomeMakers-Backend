@@ -1,4 +1,5 @@
-import { getMyProfile } from "../services/profile.service.js";
+﻿import { getMyProfile, updateClusterSettings } from "../services/profile.service.js";
+import { clusterSettingsSchema } from "../validators/profile.schema.js";
 
 export async function me(req, res, next) {
   try {
@@ -16,3 +17,5 @@ export async function updateCluster(req, res, next) {
     next(e);
   }
 }
+
+

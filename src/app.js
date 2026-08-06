@@ -26,13 +26,26 @@ import wishlistRoutes from "./routes/wishlist.routes.js";
 import searchRoutes from "./routes/search.routes.js";
 import homeRoutes from "./routes/home.routes.js";
 import deliveryTrackingRoutes from "./routes/deliveryTracking.routes.js";
+import subscriptionRoutes from "./routes/subscription.routes.js";
 import paymentRoutes from "./routes/payment.routes.js";
 import payoutRoutes from "./routes/payout.routes.js";
 export function createApp() {
   const app = express();
   app.use(express.json());
   app.use(cookieParser());
-  app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 300, standardHeaders: true, legacyHeaders: false, message: { success: false, message: "Too many requests, please try again later.", code: "RATE_LIMITED" } }));
+  app.use(
+    rateLimit({
+      windowMs: 15 * 60 * 1000,
+      max: 300,
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: {
+        success: false,
+        message: "Too many requests, please try again later.",
+        code: "RATE_LIMITED",
+      },
+    }),
+  );
   app.use(
     cors({
       origin: (origin, callback) => {
@@ -46,7 +59,13 @@ export function createApp() {
     }),
   );
 
-  app.get("/api/health", (req, res) => res.json({ ok: true, dbConnected: mongoose.connection.readyState === 1, uptime: process.uptime() }));
+  app.get("/api/health", (req, res) =>
+    res.json({
+      ok: true,
+      dbConnected: mongoose.connection.readyState === 1,
+      uptime: process.uptime(),
+    }),
+  );
   app.use("/api/auth", authRoutes);
 
   app.use("/api/onboarding", onboardingRoutes);
@@ -71,6 +90,7 @@ export function createApp() {
   app.use("/api/v1/search", searchRoutes);
   app.use("/api/v1/home", homeRoutes);
   app.use("/api/v1/delivery", deliveryTrackingRoutes);
+  app.use("/api/v1/subscriptions", subscriptionRoutes);
   app.use("/api/v1/payment", paymentRoutes); // customer-facing
   app.use("/api/cook/payouts", payoutRoutes); // homemaker-facing, matches your existing /api/cook/* convention
 
@@ -78,14 +98,3 @@ export function createApp() {
   app.use(errorHandler);
   return app;
 }
-
-
-
-
-
-
-
-
-
-
-
