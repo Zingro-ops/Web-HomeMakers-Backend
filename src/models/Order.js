@@ -32,6 +32,10 @@ const orderSchema = new Schema(
         "preparing",
         "ready",
         "completed",
+        "delivery_assigned",
+        "picked_up",
+        "out_for_delivery",
+        "delivered",
         "rejected",
       ],
       default: "pending",
@@ -54,6 +58,11 @@ const orderSchema = new Schema(
     subtotal: { type: Number, required: true },
     clusterDiscountPercent: { type: Number, default: 0 },
     notes: { type: String, default: "" },
+    deliveryPartner: {
+      name: { type: String, default: null },
+      phone: { type: String, default: null },
+      trackingId: { type: String, default: null },
+    },
   },
   { timestamps: true },
 );
