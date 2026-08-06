@@ -34,6 +34,7 @@ import paymentRoutes from "./routes/payment.routes.js";
 import payoutRoutes from "./routes/payout.routes.js";
 export function createApp() {
   const app = express();
+  app.set("trust proxy", 1);
   app.use(express.json());
   app.use(cookieParser());
   app.use(
