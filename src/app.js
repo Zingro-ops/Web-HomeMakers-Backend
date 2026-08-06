@@ -27,6 +27,7 @@ import searchRoutes from "./routes/search.routes.js";
 import homeRoutes from "./routes/home.routes.js";
 import deliveryTrackingRoutes from "./routes/deliveryTracking.routes.js";
 import subscriptionRoutes from "./routes/subscription.routes.js";
+import customerProfileRoutes from "./routes/customerProfile.routes.js";
 import paymentRoutes from "./routes/payment.routes.js";
 import payoutRoutes from "./routes/payout.routes.js";
 export function createApp() {
@@ -91,6 +92,7 @@ export function createApp() {
   app.use("/api/v1/home", homeRoutes);
   app.use("/api/v1/delivery", deliveryTrackingRoutes);
   app.use("/api/v1/subscriptions", subscriptionRoutes);
+  app.use("/api/v1/preferences", customerProfileRoutes);
   app.use("/api/v1/payment", paymentRoutes); // customer-facing
   app.use("/api/cook/payouts", payoutRoutes); // homemaker-facing, matches your existing /api/cook/* convention
 
@@ -98,3 +100,4 @@ export function createApp() {
   app.use(errorHandler);
   return app;
 }
+
