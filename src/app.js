@@ -19,6 +19,8 @@ import categoryRoutes from "./routes/category.routes.js";
 import couponRoutes from "./routes/coupon.routes.js";
 import checkoutRoutes from "./routes/checkout.routes.js";
 import reviewRoutes from "./routes/review.routes.js";
+import wishlistRoutes from "./routes/wishlist.routes.js";
+import searchRoutes from "./routes/search.routes.js";
 import paymentRoutes from "./routes/payment.routes.js";
 import payoutRoutes from "./routes/payout.routes.js";
 export function createApp() {
@@ -58,6 +60,8 @@ export function createApp() {
   app.use("/api/v1/coupons", couponRoutes);
   app.use("/api/v1/checkout", checkoutRoutes);
   app.use("/api/v1/reviews", reviewRoutes);
+  app.use("/api/v1/wishlist", wishlistRoutes);
+  app.use("/api/v1/search", searchRoutes);
   app.use("/api/v1/payment", paymentRoutes); // customer-facing
   app.use("/api/cook/payouts", payoutRoutes); // homemaker-facing, matches your existing /api/cook/* convention
 
@@ -65,4 +69,7 @@ export function createApp() {
   app.use(errorHandler);
   return app;
 }
+
+
+
 

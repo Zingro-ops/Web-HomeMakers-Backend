@@ -22,5 +22,7 @@ const dishSchema = new Schema(
   { timestamps: true },
 );
 
+dishSchema.index({ name: "text", category: "text", tag: "text" });
 export const Dish = mongoose.model("Dish", dishSchema);
+
 

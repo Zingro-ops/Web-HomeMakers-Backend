@@ -83,5 +83,7 @@ const cookSchema = new Schema(
 
 cookSchema.index({ location: "2dsphere" });
 
+cookSchema.index({ "personal.name": "text", "food.cuisine": "text", "food.category": "text", "food.description": "text" });
 export const Cook = mongoose.model("Cook", cookSchema);
+
 
