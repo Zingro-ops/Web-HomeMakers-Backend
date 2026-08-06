@@ -1,9 +1,10 @@
 ﻿import { Cook } from "../models/Cook.js";
 import { Dish } from "../models/Dish.js";
+import { isOpenNow } from "../utils/isOpenNow.js";
 import { presignGet } from "./s3.service.js";
 
 const PUBLIC_COOK_FIELDS =
-  "personal.name food.cuisine food.category food.description food.radius photos.gps status location ratingAvg ratingCount";
+  "personal.name food.cuisine food.category food.description food.radius photos.gps status location ratingAvg ratingCount hours";
 
 export async function listCooks({
   lat,
@@ -72,12 +73,10 @@ export async function getCookMenu(cookId) {
     }),
   );
 
-  return { cook, dishes: withUrls };
+  return { cook: { ...cook.toObject(), isOpenNow: isOpenNow(cook.hours) }, dishes: withUrls };
 }
 
 export async function listCuisines() {
   return Cook.distinct("food.cuisine", { status: "approved" });
 }
-
-
 

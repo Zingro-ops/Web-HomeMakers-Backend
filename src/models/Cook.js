@@ -84,6 +84,14 @@ const cookSchema = new Schema(
 cookSchema.index({ location: "2dsphere" });
 
 cookSchema.index({ "personal.name": "text", "food.cuisine": "text", "food.category": "text", "food.description": "text" });
+const DAY_HOURS = { open: { type: String, default: null }, close: { type: String, default: null }, closed: { type: Boolean, default: false } };
+cookSchema.add({
+  hours: {
+    monday: DAY_HOURS, tuesday: DAY_HOURS, wednesday: DAY_HOURS,
+    thursday: DAY_HOURS, friday: DAY_HOURS, saturday: DAY_HOURS, sunday: DAY_HOURS,
+  },
+});
 export const Cook = mongoose.model("Cook", cookSchema);
+
 
 
