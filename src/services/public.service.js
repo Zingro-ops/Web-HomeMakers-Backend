@@ -91,3 +91,24 @@ export async function listCuisines() {
 
 
 
+
+export async function getDishById(dishId) {
+  const dish = await Dish.findOne({ _id: dishId, available: true })
+    .select("name category categoryId price desc tag image_s3_key ratingAvg ratingCount spicyLevel discount cookId")
+    .populate("categoryId", "mealType name")
+    .lean();
+  if (!dish) throw Object.assign(new Error("Dish not found"), { status: 404 });
+
+  if (dish.image_s3_key) {
+    dish.imageUrl = await presignGet(dish.image_s3_key);
+  }
+  delete dish.image_s3_key;
+
+  const cook = await Cook.findOne({ _id: dish.cookId, status: "approved" }).select(PUBLIC_COOK_FIELDS);
+  if (!cook) throw Object.assign(new Error("Kitchen not found or unavailable"), { status: 404 });
+
+  return {
+    ...dish,
+    cook: { ...cook.toObject(), isOpenNow: isOpenNow(cook.hours) },
+  };
+}

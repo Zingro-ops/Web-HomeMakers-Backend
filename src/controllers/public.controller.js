@@ -25,3 +25,11 @@ export async function listCuisines(req, res, next) {
     next(e);
   }
 }
+
+export async function getDish(req, res, next) {
+  try {
+    res.json(await svc.getDishById(req.params.id));
+  } catch (e) {
+    next(e);
+  }
+}
