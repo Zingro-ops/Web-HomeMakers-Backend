@@ -15,7 +15,8 @@ import dashboardRoutes from "./routes/dashboard.routes.js";
 import profileRoutes from "./routes/profile.routes.js";
 import cartRoutes from "./routes/cart.routes.js";
 import addressRoutes from "./routes/address.routes.js";
-
+import categoryRoutes from "./routes/category.routes.js";
+import couponRoutes from "./routes/coupon.routes.js";
 export function createApp() {
   const app = express();
   app.use(express.json());
@@ -49,6 +50,9 @@ export function createApp() {
   app.use("/api/profile", profileRoutes);
   app.use("/api/cart", cartRoutes);
   app.use("/api/v1/addresses", addressRoutes);
+  app.use("/api/v1/categories", categoryRoutes);
+  app.use("/api/v1/coupons", couponRoutes);
+
   app.use(notFound);
   app.use(errorHandler);
   return app;
