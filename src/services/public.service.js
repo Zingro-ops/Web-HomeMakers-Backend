@@ -62,7 +62,8 @@ export async function getCookMenu(cookId) {
   if (!cook) throw Object.assign(new Error("Cook not found"), { status: 404 });
 
   const dishes = await Dish.find({ cookId, available: true })
-    .select("name category price desc tag image_s3_key ratingAvg ratingCount")
+    .select("name category categoryId price desc tag image_s3_key ratingAvg ratingCount spicyLevel discount")
+    .populate("categoryId", "mealType name")
     .lean();
 
   const withUrls = await Promise.all(
@@ -73,10 +74,20 @@ export async function getCookMenu(cookId) {
     }),
   );
 
-  return { cook: { ...cook.toObject(), isOpenNow: isOpenNow(cook.hours) }, dishes: withUrls };
+  const grouped = {};
+  for (const d of withUrls) {
+    const mealType = d.categoryId?.mealType || "uncategorized";
+    if (!grouped[mealType]) grouped[mealType] = [];
+    grouped[mealType].push(d);
+  }
+
+  return { cook: { ...cook.toObject(), isOpenNow: isOpenNow(cook.hours) }, menu: grouped };
 }
 
 export async function listCuisines() {
   return Cook.distinct("food.cuisine", { status: "approved" });
 }
+
+
+
 

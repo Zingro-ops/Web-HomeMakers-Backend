@@ -1,4 +1,6 @@
 ﻿import express from "express";
+import mongoose from "mongoose";
+import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import { env } from "./config/env.js";
@@ -28,6 +30,7 @@ export function createApp() {
   const app = express();
   app.use(express.json());
   app.use(cookieParser());
+  app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 300, standardHeaders: true, legacyHeaders: false, message: { success: false, message: "Too many requests, please try again later.", code: "RATE_LIMITED" } }));
   app.use(
     cors({
       origin: (origin, callback) => {
@@ -41,7 +44,7 @@ export function createApp() {
     }),
   );
 
-  app.get("/api/health", (req, res) => res.json({ ok: true }));
+  app.get("/api/health", (req, res) => res.json({ ok: true, dbConnected: mongoose.connection.readyState === 1, uptime: process.uptime() }));
   app.use("/api/auth", authRoutes);
 
   app.use("/api/onboarding", onboardingRoutes);
@@ -71,6 +74,10 @@ export function createApp() {
   app.use(errorHandler);
   return app;
 }
+
+
+
+
 
 
 

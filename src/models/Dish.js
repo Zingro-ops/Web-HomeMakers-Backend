@@ -11,6 +11,9 @@ const dishSchema = new Schema(
     },
     name: { type: String, required: true, trim: true },
     category: { type: String, required: true, trim: true },
+    categoryId: { type: mongoose.Schema.Types.ObjectId, ref: "Category", default: null },
+    spicyLevel: { type: Number, min: 0, max: 3, default: 0 },
+    discount: { type: Number, min: 0, max: 100, default: 0 },
     price: { type: Number, required: true, min: 0 },
     desc: { type: String, trim: true, default: "" },
     tag: { type: String, default: null },
@@ -24,5 +27,6 @@ const dishSchema = new Schema(
 
 dishSchema.index({ name: "text", category: "text", tag: "text" });
 export const Dish = mongoose.model("Dish", dishSchema);
+
 
 
