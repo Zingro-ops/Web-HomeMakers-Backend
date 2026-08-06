@@ -1,6 +1,7 @@
 ﻿import { Order } from "../models/Order.js";
 import { Dish } from "../models/Dish.js";
 import { Cook } from "../models/Cook.js";
+import { completeReferralIfEligible } from "./referral.service.js";
 import { Cart } from "../models/Cart.js";
 
 const TRANSITIONS = {
@@ -100,6 +101,11 @@ export async function updateOrderStatus(cookId, orderId, status, readyPhoto) {
 
   order.status = status;
   await order.save();
+
+  if (status === "completed") {
+    await completeReferralIfEligible(order.customerId).catch((e) => console.error("Referral completion check failed:", e.message));
+  }
+
   return order;
 }
 
@@ -152,4 +158,7 @@ export async function reorder(customerId, orderId) {
     skippedItems: unavailable.map((i) => ({ dishId: i.dishId, name: i.name })),
   };
 }
+
+
+
 
