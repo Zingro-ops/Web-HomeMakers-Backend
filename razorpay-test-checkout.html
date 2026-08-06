@@ -1,0 +1,80 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Zingro — Razorpay Test Checkout</title>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <style>
+    body { font-family: sans-serif; max-width: 480px; margin: 60px auto; padding: 20px; }
+    label { display: block; margin-top: 12px; font-size: 14px; color: #333; }
+    input { width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box; }
+    button { margin-top: 20px; padding: 10px 20px; font-size: 15px; cursor: pointer; }
+    pre { background: #f4f4f4; padding: 12px; margin-top: 20px; white-space: pre-wrap; word-break: break-all; }
+  </style>
+</head>
+<body>
+  <h2>Zingro — Test Checkout</h2>
+  <p>Fill in the values returned by your <code>POST /create-order</code> call, then click Pay.</p>
+
+  <label>Razorpay Key ID (public, starts with rzp_test_)
+    <input id="keyId" placeholder="rzp_test_xxxxxxxx">
+  </label>
+  <label>Razorpay Order ID (from create-order response)
+    <input id="orderId" placeholder="order_xxxxxxxx">
+  </label>
+  <label>Amount in paise (from create-order response, amount * 100)
+    <input id="amount" placeholder="e.g. 37920">
+  </label>
+
+  <button onclick="pay()">Pay with Razorpay Test Checkout</button>
+
+  <pre id="result"></pre>
+
+  <hr>
+  <p><strong>Test card:</strong> 4111 1111 1111 1111, any future expiry, any CVV, any name.</p>
+  <p><strong>Test UPI (success):</strong> success@razorpay</p>
+  <p><strong>Test UPI (failure):</strong> failure@razorpay</p>
+
+  <script>
+    function pay() {
+      const keyId = document.getElementById('keyId').value.trim();
+      const orderId = document.getElementById('orderId').value.trim();
+      const amount = document.getElementById('amount').value.trim();
+
+      if (!keyId || !orderId || !amount) {
+        alert('Fill in all three fields first.');
+        return;
+      }
+
+      const options = {
+        key: keyId,
+        amount: amount,
+        currency: "INR",
+        name: "Zingro (Test)",
+        description: "Test order payment",
+        order_id: orderId,
+        handler: function (response) {
+          document.getElementById('result').textContent =
+            "SUCCESS — copy these into your verify call:\n\n" +
+            "razorpayOrderId: " + response.razorpay_order_id + "\n" +
+            "razorpayPaymentId: " + response.razorpay_payment_id + "\n" +
+            "razorpaySignature: " + response.razorpay_signature;
+        },
+        modal: {
+          ondismiss: function () {
+            document.getElementById('result').textContent = "Checkout closed without completing payment.";
+          }
+        },
+        theme: { color: "#111111" }
+      };
+
+      const rzp = new Razorpay(options);
+      rzp.on('payment.failed', function (response) {
+        document.getElementById('result').textContent =
+          "PAYMENT FAILED:\n" + JSON.stringify(response.error, null, 2);
+      });
+      rzp.open();
+    }
+  </script>
+</body>
+</html>

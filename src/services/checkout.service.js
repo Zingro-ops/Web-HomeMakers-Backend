@@ -95,6 +95,7 @@ export async function computeBreakdown({ userId, addressId, couponCode }) {
   );
 
   return {
+    cookId: cook._id,
     lineItems,
     subtotal,
     gst,
@@ -108,4 +109,3 @@ export async function computeBreakdown({ userId, addressId, couponCode }) {
     grandTotal,
   };
 }
-

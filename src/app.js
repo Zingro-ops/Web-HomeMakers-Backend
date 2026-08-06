@@ -18,6 +18,9 @@ import addressRoutes from "./routes/address.routes.js";
 import categoryRoutes from "./routes/category.routes.js";
 import couponRoutes from "./routes/coupon.routes.js";
 import checkoutRoutes from "./routes/checkout.routes.js";
+import paymentRoutes from "./routes/payment.routes.js";
+import payoutRoutes from "./routes/payout.routes.js";
+
 export function createApp() {
   const app = express();
   app.use(express.json());
@@ -54,6 +57,8 @@ export function createApp() {
   app.use("/api/v1/categories", categoryRoutes);
   app.use("/api/v1/coupons", couponRoutes);
   app.use("/api/v1/checkout", checkoutRoutes);
+  app.use("/api/v1/payment", paymentRoutes); // customer-facing
+  app.use("/api/cook/payouts", payoutRoutes); // homemaker-facing, matches your existing /api/cook/* convention
 
   app.use(notFound);
   app.use(errorHandler);
