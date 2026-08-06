@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+﻿import mongoose from "mongoose";
 const { Schema } = mongoose;
 
 const orderItemSchema = new Schema(
@@ -26,10 +26,18 @@ const orderSchema = new Schema(
     total: { type: Number, required: true },
     status: {
       type: String,
-      enum: ["pending", "preparing", "ready", "completed", "rejected"],
+      enum: [
+        "pending",
+        "accepted",
+        "preparing",
+        "ready",
+        "completed",
+        "rejected",
+      ],
       default: "pending",
       index: true,
     },
+    readyPhoto: { type: String, default: null }, // S3 key, set when cook uploads at ready transition
     deliveryAddress: {
       building: String,
       locality: String,
@@ -51,3 +59,4 @@ const orderSchema = new Schema(
 );
 
 export const Order = mongoose.model("Order", orderSchema);
+

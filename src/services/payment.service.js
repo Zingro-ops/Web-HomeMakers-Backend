@@ -89,7 +89,7 @@ export async function verifyPayment({
 
   const order = await Order.findByIdAndUpdate(
     payment.orderId,
-    { status: "accepted" },
+    {},
     { new: true },
   );
 
@@ -106,4 +106,5 @@ export async function verifyPayment({
 
   return { orderId: order._id, status: "paid" };
 }
+
 

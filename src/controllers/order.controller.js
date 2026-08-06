@@ -1,4 +1,4 @@
-import {
+﻿import {
   createOrderSchema,
   updateOrderStatusSchema,
   listOrdersSchema,
@@ -35,9 +35,28 @@ export async function cookList(req, res, next) {
 
 export async function cookUpdateStatus(req, res, next) {
   try {
-    const { status } = updateOrderStatusSchema.parse(req.body);
-    res.json(await svc.updateOrderStatus(req.cookId, req.params.id, status));
+    const { status, readyPhoto } = updateOrderStatusSchema.parse(req.body);
+    res.json(await svc.updateOrderStatus(req.cookId, req.params.id, status, readyPhoto));
   } catch (e) {
     next(e);
   }
+}
+
+
+export async function getOne(req, res, next) {
+  try {
+    res.json(await svc.getById(req.user.id, req.params.id));
+  } catch (e) { next(e); }
+}
+
+export async function cancel(req, res, next) {
+  try {
+    res.json(await svc.cancelOrder(req.user.id, req.params.id));
+  } catch (e) { next(e); }
+}
+
+export async function reorder(req, res, next) {
+  try {
+    res.json(await svc.reorder(req.user.id, req.params.id));
+  } catch (e) { next(e); }
 }
