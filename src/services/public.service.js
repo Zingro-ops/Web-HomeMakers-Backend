@@ -1,9 +1,9 @@
-import { Cook } from "../models/Cook.js";
+﻿import { Cook } from "../models/Cook.js";
 import { Dish } from "../models/Dish.js";
 import { presignGet } from "./s3.service.js";
 
 const PUBLIC_COOK_FIELDS =
-  "personal.name food.cuisine food.category food.description food.radius photos.gps status location";
+  "personal.name food.cuisine food.category food.description food.radius photos.gps status location ratingAvg ratingCount";
 
 export async function listCooks({
   lat,
@@ -61,7 +61,7 @@ export async function getCookMenu(cookId) {
   if (!cook) throw Object.assign(new Error("Cook not found"), { status: 404 });
 
   const dishes = await Dish.find({ cookId, available: true })
-    .select("name category price desc tag image_s3_key")
+    .select("name category price desc tag image_s3_key ratingAvg ratingCount")
     .lean();
 
   const withUrls = await Promise.all(
@@ -78,3 +78,6 @@ export async function getCookMenu(cookId) {
 export async function listCuisines() {
   return Cook.distinct("food.cuisine", { status: "approved" });
 }
+
+
+

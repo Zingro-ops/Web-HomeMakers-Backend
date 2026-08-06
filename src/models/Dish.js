@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+﻿import mongoose from "mongoose";
 const { Schema } = mongoose;
 
 const dishSchema = new Schema(
@@ -14,6 +14,8 @@ const dishSchema = new Schema(
     price: { type: Number, required: true, min: 0 },
     desc: { type: String, trim: true, default: "" },
     tag: { type: String, default: null },
+    ratingAvg: { type: Number, default: 0 },
+    ratingCount: { type: Number, default: 0 },
     available: { type: Boolean, default: true },
     image_s3_key: { type: String, default: null }, // ADD THIS
   },
@@ -21,3 +23,4 @@ const dishSchema = new Schema(
 );
 
 export const Dish = mongoose.model("Dish", dishSchema);
+

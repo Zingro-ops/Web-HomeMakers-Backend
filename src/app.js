@@ -1,4 +1,4 @@
-import express from "express";
+﻿import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import { env } from "./config/env.js";
@@ -18,9 +18,9 @@ import addressRoutes from "./routes/address.routes.js";
 import categoryRoutes from "./routes/category.routes.js";
 import couponRoutes from "./routes/coupon.routes.js";
 import checkoutRoutes from "./routes/checkout.routes.js";
+import reviewRoutes from "./routes/review.routes.js";
 import paymentRoutes from "./routes/payment.routes.js";
 import payoutRoutes from "./routes/payout.routes.js";
-
 export function createApp() {
   const app = express();
   app.use(express.json());
@@ -57,6 +57,7 @@ export function createApp() {
   app.use("/api/v1/categories", categoryRoutes);
   app.use("/api/v1/coupons", couponRoutes);
   app.use("/api/v1/checkout", checkoutRoutes);
+  app.use("/api/v1/reviews", reviewRoutes);
   app.use("/api/v1/payment", paymentRoutes); // customer-facing
   app.use("/api/cook/payouts", payoutRoutes); // homemaker-facing, matches your existing /api/cook/* convention
 
@@ -64,3 +65,4 @@ export function createApp() {
   app.use(errorHandler);
   return app;
 }
+

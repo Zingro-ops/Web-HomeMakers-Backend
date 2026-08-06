@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+﻿import mongoose from "mongoose";
 
 const { Schema } = mongoose;
 
@@ -7,6 +7,10 @@ const cookSchema = new Schema(
     zingroUserId: { type: String, required: true, unique: true, index: true },
     phone: { type: String, required: true, index: true },
     email: { type: String, trim: true, lowercase: true, default: null },
+
+    ratingAvg: { type: Number, default: 0 },
+
+    ratingCount: { type: Number, default: 0 },
 
     status: {
       type: String,
@@ -71,7 +75,7 @@ const cookSchema = new Schema(
     consent: { terms_accepted_at: Date, privacy_accepted_at: Date, ip: String },
     location: {
       type: { type: String, enum: ["Point"], default: "Point" },
-      coordinates: { type: [Number], default: [0, 0] }, // [lng, lat] — GeoJSON order, NOT [lat, lng]
+      coordinates: { type: [Number], default: [0, 0] }, // [lng, lat] â€” GeoJSON order, NOT [lat, lng]
     },
   },
   { timestamps: true },
@@ -80,3 +84,4 @@ const cookSchema = new Schema(
 cookSchema.index({ location: "2dsphere" });
 
 export const Cook = mongoose.model("Cook", cookSchema);
+
