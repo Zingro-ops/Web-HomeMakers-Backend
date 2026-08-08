@@ -53,7 +53,10 @@ export function createApp() {
   app.use(
     cors({
       origin: (origin, callback) => {
-        if (!origin || env.clientOrigins.includes(origin)) {
+        const isAllowedOrigin = !origin || env.clientOrigins.includes(origin);
+        const isLocalhostDev =
+          origin && /^http:\/\/localhost:\d+$/.test(origin);
+        if (isAllowedOrigin || isLocalhostDev) {
           callback(null, true);
         } else {
           callback(new Error("Not allowed by CORS"));
@@ -105,6 +108,3 @@ export function createApp() {
   app.use(errorHandler);
   return app;
 }
-
-
-
