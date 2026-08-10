@@ -28,4 +28,9 @@ export const env = {
   gpsToleranceM: Number(process.env.GPS_TOLERANCE_METERS) || 500,
   // add to the exported env object
   zingroJwtSecret: process.env.ZINGRO_JWT_SECRET,
+  digio: {
+    baseUrl: process.env.DIGIO_BASE_URL || "https://ext.digio.in:444", // sandbox default; set to https://api.digio.in for production
+    clientId: process.env.DIGIO_CLIENT_ID,
+    clientSecret: process.env.DIGIO_CLIENT_SECRET,
+  },
 };

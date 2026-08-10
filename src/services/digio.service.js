@@ -1,19 +1,63 @@
+﻿import axios from "axios";
 import { env } from "../config/env.js";
 
 const MOCK = env.nodeEnv !== "production" || process.env.KYC_MOCK === "1";
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
-// Each fn returns a normalized verdict. Cached verdicts handled by caller.
-export async function verifyPan(pan) {
+const digioClient = axios.create({
+  baseURL: env.digio.baseUrl,
+  headers: {
+    Authorization: `Basic ${Buffer.from(`${env.digio.clientId}:${env.digio.clientSecret}`).toString("base64")}`,
+    "Content-Type": "application/json",
+  },
+  timeout: 15000,
+});
+
+export async function verifyPan(pan, name, dob) {
   if (MOCK) {
     await wait(150);
     return {
       verified: true,
-      name: "Test",
-      ref_id: `mock_pan_${pan.slice(-4)}`,
+      name_matched: true,
+      dob_matched: true,
+      category: "individual",
+      status: "valid",
+      remarks: null,
     };
   }
-  throw new Error("Digio PAN not configured");
+
+  try {
+    const { data } = await digioClient.post(
+      "/v3/client/kyc/fetch_id_data/PAN",
+      {
+        id_no: pan,
+        name,
+        dob, // must be dd/MM/yyyy
+      },
+    );
+
+    return {
+      verified: data.status === "valid" && data.name_as_per_pan_match === true,
+      name_matched: data.name_as_per_pan_match,
+      dob_matched: data.date_of_birth_match,
+      category: data.category,
+      status: data.status,
+      remarks: data.remarks,
+    };
+  } catch (error) {
+    if (error.response) {
+      throw Object.assign(
+        new Error(
+          `Digio PAN verification failed: ${error.response.data?.remarks || error.response.status}`,
+        ),
+        { status: 502 },
+      );
+    }
+    throw Object.assign(
+      new Error("Unable to reach Digio PAN verification service."),
+      { status: 502 },
+    );
+  }
 }
 
 export async function verifyBank(account, ifsc) {
@@ -25,7 +69,7 @@ export async function verifyBank(account, ifsc) {
       ref_id: `mock_bank_${account.slice(-4)}`,
     };
   }
-  throw new Error("Digio bank not configured");
+  throw new Error("Digio bank not configured â€” waiting on real API contract.");
 }
 
 export async function verifyFssai(license) {
@@ -38,17 +82,7 @@ export async function verifyFssai(license) {
       ref_id: `mock_fssai_${license.slice(-4)}`,
     };
   }
-  throw new Error("Digio FSSAI not configured");
-}
-
-export async function verifyGst(gstin) {
-  if (MOCK) {
-    await wait(100);
-    return {
-      verified: true,
-      name: "Test",
-      ref_id: `mock_gst_${gstin.slice(-4)}`,
-    };
-  }
-  throw new Error("Digio GST not configured");
+  throw new Error(
+    "Digio does not support FSSAI â€” needs a separate provider or manual review.",
+  );
 }

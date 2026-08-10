@@ -17,6 +17,9 @@ export const stepSchemas = {
   }),
   tax: z.object({
     pan: z.string().regex(PAN, "Invalid PAN"),
+    dob: z
+      .string()
+      .regex(/^\d{2}\/\d{2}\/\d{4}$/, "DOB must be in dd/MM/yyyy format"),
     gst: z
       .union([z.string().regex(GSTIN, "Invalid GST"), z.literal("")])
       .optional()
