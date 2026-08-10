@@ -103,6 +103,53 @@ export async function verifyBank(account, ifsc, holderName) {
     );
   }
 }
+export async function createAadhaarRequest(
+  cookId,
+  customerIdentifier,
+  customerName,
+) {
+  if (MOCK) {
+    await wait(150);
+    return {
+      id: `mock_kyc_${cookId}`,
+      status: "requested",
+      customer_identifier: customerIdentifier,
+    };
+  }
+
+  try {
+    const { data } = await digioClient.post(
+      "/client/kyc/v2/request/with_template",
+      {
+        customer_identifier: customerIdentifier,
+        customer_name: customerName,
+        template_name: "zingro_aadhaar_verification", // replace with your exact DigiStudio workflow name
+        notify_customer: false, // SDK-driven flow, don't need Digio's own notification
+        reference_id: `cook_${cookId}`,
+        transaction_id: `aadhaar_${cookId}_${Date.now()}`,
+        generate_access_token: true, // required for SDK flow per Digio docs
+        expire_in_days: 10,
+      },
+    );
+
+    return {
+      id: data.id,
+      status: data.status,
+      customer_identifier: data.customer_identifier,
+      access_token: data.access_token?.id || null,
+    };
+  } catch (error) {
+    if (error.response) {
+      throw Object.assign(
+        new Error(
+          `Digio Aadhaar request creation failed: ${error.response.data?.error_msg || error.response.status}`,
+        ),
+        { status: 502 },
+      );
+    }
+    throw Object.assign(new Error("Unable to reach Digio."), { status: 502 });
+  }
+}
 
 export async function verifyFssai(license) {
   if (MOCK) {
