@@ -1,4 +1,4 @@
-import { KycService } from "./kyc/kyc.service.js";
+﻿import { KycService } from "./kyc.service.js";
 
 async function mapStep(step, data, cook) {
   switch (step) {
