@@ -43,8 +43,10 @@ const cookSchema = new Schema(
       masked: String,
       ifsc: String,
       holder_name: String,
-      penny_drop_ok: Boolean,
-      ref_id: String,
+      verified: Boolean,
+      name_with_bank: String,
+      fuzzy_match_score: Number,
+      error_msg: String,
     },
     fssai: {
       license_masked: String,

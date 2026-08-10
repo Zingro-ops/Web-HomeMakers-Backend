@@ -60,16 +60,48 @@ export async function verifyPan(pan, name, dob) {
   }
 }
 
-export async function verifyBank(account, ifsc) {
+export async function verifyBank(account, ifsc, holderName) {
   if (MOCK) {
     await wait(150);
     return {
       verified: true,
-      name: "Test",
-      ref_id: `mock_bank_${account.slice(-4)}`,
+      name_with_bank: "Test",
+      fuzzy_match_result: true,
+      fuzzy_match_score: 95,
     };
   }
-  throw new Error("Digio bank not configured â€” waiting on real API contract.");
+
+  try {
+    const { data } = await digioClient.post("/v4/client/verify/bank_account", {
+      amount: 1,
+      beneficiary_account_no: account,
+      beneficiary_ifsc: ifsc,
+      beneficiary_name: holderName,
+      validation_mode: "PENNY_LESS",
+      unique_request_id: `zingro_bank_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    });
+
+    return {
+      verified: data.verified === true,
+      name_with_bank: data.beneficiary_name_with_bank || null,
+      fuzzy_match_result: data.fuzzy_match_result ?? null,
+      fuzzy_match_score: data.fuzzy_match_score ?? null,
+      error_msg: data.error_msg || null,
+    };
+  } catch (error) {
+    if (error.response) {
+      throw Object.assign(
+        new Error(
+          `Digio bank verification failed: ${error.response.data?.error_msg || error.response.status}`,
+        ),
+        { status: 502 },
+      );
+    }
+    throw Object.assign(
+      new Error("Unable to reach Digio bank verification service."),
+      { status: 502 },
+    );
+  }
 }
 
 export async function verifyFssai(license) {

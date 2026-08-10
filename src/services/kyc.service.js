@@ -6,7 +6,8 @@ const MATCH_THRESHOLD = 0.85;
 // KycService: all provider calls go through here. Swap digio.* to change vendor.
 export const KycService = {
   verifyPan: (pan, name, dob) => digio.verifyPan(pan, name, dob),
-  verifyBank: (account, ifsc) => digio.verifyBank(account, ifsc),
+  verifyBank: (account, ifsc, holderName) =>
+    digio.verifyBank(account, ifsc, holderName),
   verifyFssai: (license) => digio.verifyFssai(license),
 };
 // Pure decision: given verdict bundle, return state + score.

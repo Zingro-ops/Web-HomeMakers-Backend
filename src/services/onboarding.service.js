@@ -21,7 +21,11 @@ async function mapStep(step, data, cook) {
       };
     case "tax": {
       const enteredName = cook.personal?.name || "";
-      const result = await KycService.verifyPan(data.pan, enteredName, data.dob);
+      const result = await KycService.verifyPan(
+        data.pan,
+        enteredName,
+        data.dob,
+      );
       return {
         "tax.masked": maskPan(data.pan),
         "tax.dob": data.dob,
@@ -34,12 +38,22 @@ async function mapStep(step, data, cook) {
         "tax.remarks": result.remarks,
       };
     }
-    case "bank":
+    case "bank": {
+      const result = await KycService.verifyBank(
+        data.account,
+        data.ifsc,
+        data.holder,
+      );
       return {
         "bank.masked": maskTail(data.account),
         "bank.ifsc": data.ifsc,
         "bank.holder_name": data.holder,
+        "bank.verified": result.verified,
+        "bank.name_with_bank": result.name_with_bank,
+        "bank.fuzzy_match_score": result.fuzzy_match_score,
+        "bank.error_msg": result.error_msg,
       };
+    }
     case "fssai":
       return { "fssai.license_masked": maskFssai(data.license) };
     case "food":
@@ -73,7 +87,9 @@ export async function saveDraft(cookId, step, data) {
 
   await Cook.updateOne(
     { _id: cookId },
-    { $set: { ...update, currentStep: Math.min(nextStep, 8), status: "draft" } },
+    {
+      $set: { ...update, currentStep: Math.min(nextStep, 8), status: "draft" },
+    },
   );
 
   return {
