@@ -32,6 +32,8 @@ import supportRoutes from "./routes/support.routes.js";
 import referralRoutes from "./routes/referral.routes.js";
 import paymentRoutes from "./routes/payment.routes.js";
 import payoutRoutes from "./routes/payout.routes.js";
+import aadhaarRoutes from "./routes/aadhaar.routes.js";
+
 export function createApp() {
   const app = express();
   app.set("trust proxy", 1);
@@ -103,7 +105,7 @@ export function createApp() {
   app.use("/api/v1/referral", referralRoutes);
   app.use("/api/v1/payment", paymentRoutes); // customer-facing
   app.use("/api/cook/payouts", payoutRoutes); // homemaker-facing, matches your existing /api/cook/* convention
-
+  app.use("/api/onboarding/aadhaar", aadhaarRoutes);
   app.use(notFound);
   app.use(errorHandler);
   return app;

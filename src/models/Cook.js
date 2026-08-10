@@ -39,6 +39,11 @@ const cookSchema = new Schema(
       status: String,
       remarks: String,
     },
+    aadhaar: {
+      request_id: String,
+      status: String,
+      updated_at: Date,
+    },
     bank: {
       masked: String,
       ifsc: String,
