@@ -1,5 +1,10 @@
-﻿import { KycService } from "./kyc.service.js";
+﻿import { Cook } from "../models/Cook.js";
+import { STEP_ORDER } from "../validators/onboarding.schema.js";
+import { maskPan, maskTail, maskFssai } from "../utils/mask.js";
+import { KycService } from "./kyc.service.js";
 
+// Map a validated step payload to Cook field updates.
+// Sensitive values are masked; raw PAN/account/license are NOT stored.
 async function mapStep(step, data, cook) {
   switch (step) {
     case "personal":
@@ -16,11 +21,7 @@ async function mapStep(step, data, cook) {
       };
     case "tax": {
       const enteredName = cook.personal?.name || "";
-      const result = await KycService.verifyPan(
-        data.pan,
-        enteredName,
-        data.dob,
-      );
+      const result = await KycService.verifyPan(data.pan, enteredName, data.dob);
       return {
         "tax.masked": maskPan(data.pan),
         "tax.dob": data.dob,
@@ -72,14 +73,31 @@ export async function saveDraft(cookId, step, data) {
 
   await Cook.updateOne(
     { _id: cookId },
-    {
-      $set: { ...update, currentStep: Math.min(nextStep, 8), status: "draft" },
-    },
+    { $set: { ...update, currentStep: Math.min(nextStep, 8), status: "draft" } },
   );
 
   return {
     savedStep: step,
     currentStep: Math.min(nextStep, 8),
     verification: update["tax.verified"],
+  };
+}
+
+export async function getStatus(cookId) {
+  const cook = await Cook.findById(cookId).select(
+    "status currentStep personal.name tax.verified bank.penny_drop_ok fssai.active tax.gst_verified kyc.decision",
+  );
+  if (!cook) throw Object.assign(new Error("Cook not found"), { status: 404 });
+  return {
+    status: cook.status,
+    currentStep: cook.currentStep,
+    name: cook.personal?.name || null,
+    verdicts: {
+      pan: cook.tax?.verified ?? null,
+      bank: cook.bank?.penny_drop_ok ?? null,
+      fssai: cook.fssai?.active ?? null,
+      gst: cook.tax?.gst_verified ?? null,
+    },
+    kycDecision: cook.kyc?.decision ?? null,
   };
 }
