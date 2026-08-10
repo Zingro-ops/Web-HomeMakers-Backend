@@ -118,26 +118,24 @@ export async function createAadhaarRequest(
   }
 
   try {
+    const payload = {
+      customer_identifier: customerIdentifier,
+      customer_name: customerName,
+      template_name: "zingro_aadhaar_verification",
+      notify_customer: false,
+      reference_id: `cook_${cookId}`,
+      transaction_id: `aadhaar_${cookId}_${Date.now()}`,
+      generate_access_token: true,
+      expire_in_days: 10,
+    };
+    console.log(
+      "DIGIO AADHAAR REQUEST PAYLOAD:",
+      JSON.stringify(payload, null, 2),
+    );
     const { data } = await digioClient.post(
       "/client/kyc/v2/request/with_template",
-      {
-        customer_identifier: customerIdentifier,
-        customer_name: customerName,
-        template_name: "zingro_aadhaar_verification", // replace with your exact DigiStudio workflow name
-        notify_customer: false, // SDK-driven flow, don't need Digio's own notification
-        reference_id: `cook_${cookId}`,
-        transaction_id: `aadhaar_${cookId}_${Date.now()}`,
-        generate_access_token: true, // required for SDK flow per Digio docs
-        expire_in_days: 10,
-      },
+      payload,
     );
-
-    return {
-      id: data.id,
-      status: data.status,
-      customer_identifier: data.customer_identifier,
-      access_token: data.access_token?.id || null,
-    };
   } catch (error) {
     if (error.response) {
       console.error(
