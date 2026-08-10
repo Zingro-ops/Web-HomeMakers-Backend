@@ -121,7 +121,7 @@ export async function createAadhaarRequest(
     const payload = {
       customer_identifier: customerIdentifier,
       customer_name: customerName,
-      template_name: "zingro_aadhaar_verification",
+      template_name: "KTP260811014321962KCYU2CR",
       notify_customer: false,
       reference_id: `cook_${cookId}`,
       transaction_id: `aadhaar_${cookId}_${Date.now()}`,
