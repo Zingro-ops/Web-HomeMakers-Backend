@@ -140,6 +140,13 @@ export async function createAadhaarRequest(
       "/client/kyc/v2/request/with_template",
       payload,
     );
+
+    return {
+      id: data.id,
+      status: data.status,
+      customer_identifier: data.customer_identifier,
+      access_token: data.access_token?.id || null,
+    };
   } catch (error) {
     if (error.response) {
       console.error(
@@ -158,16 +165,16 @@ export async function createAadhaarRequest(
 }
 
 export async function verifyFssai(license) {
-  if (MOCK) {
-    await wait(150);
-    return {
-      active: true,
-      registered_name: "Test",
-      expiry: "2027-12-31",
-      ref_id: `mock_fssai_${license.slice(-4)}`,
-    };
-  }
-  throw new Error(
-    "Digio does not support FSSAI â€” needs a separate provider or manual review.",
-  );
+  // No real FSSAI provider integrated yet (Digio doesn't offer this).
+  // Always returns a soft-pass with manual_review_required — must NEVER
+  // throw here, since that would silently break the entire onboarding
+  // KYC decision pipeline (see submit.service.js / decideKyc).
+  await wait(150);
+  return {
+    active: true,
+    registered_name: null,
+    expiry: null,
+    ref_id: `pending_manual_review_${license.slice(-4)}`,
+    manual_review_required: true,
+  };
 }
