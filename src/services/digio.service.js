@@ -90,6 +90,10 @@ export async function verifyBank(account, ifsc, holderName) {
     };
   } catch (error) {
     if (error.response) {
+      console.error(
+        "DIGIO BANK ERROR RESPONSE:",
+        JSON.stringify(error.response.data, null, 2),
+      );
       throw Object.assign(
         new Error(
           `Digio bank verification failed: ${error.response.data?.error_msg || error.response.status}`,
