@@ -59,6 +59,7 @@ const cookSchema = new Schema(
       registered_name: String,
       expiry: String,
       ref_id: String,
+      manual_review_required: Boolean,
     },
     food: {
       cuisine: String,
