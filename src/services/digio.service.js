@@ -73,7 +73,6 @@ export async function verifyBank(account, ifsc, holderName) {
 
   try {
     const { data } = await digioClient.post("/v4/client/verify/bank_account", {
-      amount: 1,
       beneficiary_account_no: account,
       beneficiary_ifsc: ifsc,
       beneficiary_name: holderName,
