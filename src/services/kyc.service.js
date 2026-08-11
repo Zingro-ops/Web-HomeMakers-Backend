@@ -7,6 +7,8 @@ export const KycService = {
   verifyBank: (account, ifsc, holderName) =>
     digio.verifyBank(account, ifsc, holderName),
   verifyFssai: (license) => digio.verifyFssai(license),
+  createAadhaarRequest: (cookId, customerIdentifier, customerName) =>
+    digio.createAadhaarRequest(cookId, customerIdentifier, customerName),
 };
 
 // Pure decision: reads the Cook's already-stored real verification results.
