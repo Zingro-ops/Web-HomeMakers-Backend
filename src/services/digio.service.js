@@ -77,7 +77,7 @@ export async function verifyBank(account, ifsc, holderName) {
       beneficiary_account_no: account,
       beneficiary_ifsc: ifsc,
       beneficiary_name: holderName,
-      validation_mode: "PENNY_DROP",
+      validation_mode: "AUTO",
       unique_request_id: `zingro_bank_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
     });
 
