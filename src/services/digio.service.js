@@ -86,6 +86,7 @@ export async function verifyBank(account, ifsc, holderName) {
       fuzzy_match_result: data.fuzzy_match_result ?? null,
       fuzzy_match_score: data.fuzzy_match_score ?? null,
       error_msg: data.error_msg || null,
+      validation_mode_used: data.validation_mode || null,
     };
   } catch (error) {
     if (error.response) {
