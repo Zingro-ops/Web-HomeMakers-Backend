@@ -27,11 +27,14 @@ export async function verifyPan(pan, name, dob) {
   }
 
   try {
-    const { data } = await digioClient.post("/v3/client/kyc/fetch_id_data/PAN", {
-      id_no: pan,
-      name,
-      dob, // must be dd/MM/yyyy
-    });
+    const { data } = await digioClient.post(
+      "/v3/client/kyc/fetch_id_data/PAN",
+      {
+        id_no: pan,
+        name,
+        dob, // must be dd/MM/yyyy
+      },
+    );
 
     return {
       verified: data.status === "valid" && data.name_as_per_pan_match === true,
@@ -44,11 +47,16 @@ export async function verifyPan(pan, name, dob) {
   } catch (error) {
     if (error.response) {
       throw Object.assign(
-        new Error(`Digio PAN verification failed: ${error.response.data?.remarks || error.response.status}`),
+        new Error(
+          `Digio PAN verification failed: ${error.response.data?.remarks || error.response.status}`,
+        ),
         { status: 502 },
       );
     }
-    throw Object.assign(new Error("Unable to reach Digio PAN verification service."), { status: 502 });
+    throw Object.assign(
+      new Error("Unable to reach Digio PAN verification service."),
+      { status: 502 },
+    );
   }
 }
 
@@ -82,17 +90,29 @@ export async function verifyBank(account, ifsc, holderName) {
     };
   } catch (error) {
     if (error.response) {
-      console.error("DIGIO BANK ERROR RESPONSE:", JSON.stringify(error.response.data, null, 2));
+      console.error(
+        "DIGIO BANK ERROR RESPONSE:",
+        JSON.stringify(error.response.data, null, 2),
+      );
       throw Object.assign(
-        new Error(`Digio bank verification failed: ${error.response.data?.error_msg || error.response.status}`),
+        new Error(
+          `Digio bank verification failed: ${error.response.data?.error_msg || error.response.status}`,
+        ),
         { status: 502 },
       );
     }
-    throw Object.assign(new Error("Unable to reach Digio bank verification service."), { status: 502 });
+    throw Object.assign(
+      new Error("Unable to reach Digio bank verification service."),
+      { status: 502 },
+    );
   }
 }
 
-export async function createAadhaarRequest(cookId, customerIdentifier, customerName) {
+export async function createAadhaarRequest(
+  cookId,
+  customerIdentifier,
+  customerName,
+) {
   if (MOCK) {
     await wait(150);
     return {
@@ -113,9 +133,15 @@ export async function createAadhaarRequest(cookId, customerIdentifier, customerN
       generate_access_token: true,
       expire_in_days: 10,
     };
-    console.log("DIGIO AADHAAR REQUEST PAYLOAD:", JSON.stringify(payload, null, 2));
+    console.log(
+      "DIGIO AADHAAR REQUEST PAYLOAD:",
+      JSON.stringify(payload, null, 2),
+    );
 
-    const { data } = await digioClient.post("/client/kyc/v2/request/with_template", payload);
+    const { data } = await digioClient.post(
+      "/client/kyc/v2/request/with_template",
+      payload,
+    );
     console.log("DIGIO AADHAAR SUCCESS:", JSON.stringify(data, null, 2));
 
     return {
@@ -126,9 +152,14 @@ export async function createAadhaarRequest(cookId, customerIdentifier, customerN
     };
   } catch (error) {
     if (error.response) {
-      console.error("DIGIO ERROR RESPONSE:", JSON.stringify(error.response.data, null, 2));
+      console.error(
+        "DIGIO ERROR RESPONSE:",
+        JSON.stringify(error.response.data, null, 2),
+      );
       throw Object.assign(
-        new Error(`Digio Aadhaar request creation failed: ${error.response.data?.error_msg || error.response.status}`),
+        new Error(
+          `Digio Aadhaar request creation failed: ${error.response.data?.error_msg || error.response.status}`,
+        ),
         { status: 502 },
       );
     }
@@ -149,35 +180,51 @@ export async function verifyFssai(license) {
   }
 
   try {
-    const { data } = await digioClient.post(`/v3/client/kyc/fetch_id_data/FSSAI`, {
-      id_no: license,
-    });
-    console.log("DIGIO FSSAI SUCCESS:", JSON.stringify(data, null, 2));
+    const { data } = await digioClient.post(
+      `/v3/client/kyc/fetch_id_data/FSSAI`,
+      {
+        id_no: license,
+      },
+    );
 
-    // Response field names not yet confirmed against real data — logging
-    // above so we can see the actual shape on first real call, then refine
-    // this mapping. Defensive fallbacks in case the exact field names
-    // differ from PAN's response shape.
-    return {
-      active: data.status === "valid" || data.status === "active" || data.verified === true,
-      registered_name: data.name || data.registered_name || null,
-      expiry: data.expiry || data.valid_upto || null,
-      ref_id: data.id || data.request_id || null,
-      manual_review_required: false,
-      raw: data, // temporary, remove once mapping is confirmed
-    };
-  } catch (error) {
-    if (error.response) {
-      console.error("DIGIO FSSAI ERROR RESPONSE:", JSON.stringify(error.response.data, null, 2));
-      // Fail soft to manual review rather than crashing the KYC pipeline —
-      // same discipline as before: this must NEVER throw uncaught.
+    const details = data.fssai_details?.[0];
+    if (!details) {
       return {
         active: false,
         registered_name: null,
         expiry: null,
         ref_id: null,
         manual_review_required: true,
-        error_msg: error.response.data?.message || String(error.response.status),
+        error_msg: "No FSSAI record found for this license number.",
+      };
+    }
+
+    return {
+      active:
+        details.licenseactiveflag === true &&
+        details.statusdesc === "License Issued",
+      registered_name: details.companyname || null,
+      expiry: null, // not present in this response — FSSAI's public API doesn't expose expiry here
+      ref_id: String(details.refid || details.licenseno || ""),
+      license_category: details.licensecategoryname || null,
+      state: details.statename || null,
+      status_desc: details.statusdesc || null,
+      manual_review_required: false,
+    };
+  } catch (error) {
+    if (error.response) {
+      console.error(
+        "DIGIO FSSAI ERROR RESPONSE:",
+        JSON.stringify(error.response.data, null, 2),
+      );
+      return {
+        active: false,
+        registered_name: null,
+        expiry: null,
+        ref_id: null,
+        manual_review_required: true,
+        error_msg:
+          error.response.data?.message || String(error.response.status),
       };
     }
     return {
