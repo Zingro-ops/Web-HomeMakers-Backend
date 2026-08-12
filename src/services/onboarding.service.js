@@ -104,7 +104,7 @@ export async function saveDraft(cookId, step, data) {
   return {
     savedStep: step,
     currentStep: Math.min(nextStep, 8),
-    verification: update["tax.verified"],
+    verification: getVerificationSummary(step, update),
   };
 }
 
