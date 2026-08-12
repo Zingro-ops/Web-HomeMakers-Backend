@@ -55,3 +55,20 @@ export async function webhook(req, res) {
     res.status(200).send("ok"); // still ack, don't make Digio retry on our bug
   }
 }
+
+export async function confirm(req, res, next) {
+  try {
+    await Cook.updateOne(
+      { _id: req.cookId },
+      {
+        $set: {
+          "aadhaar.status": "verified",
+          "aadhaar.verified_at": new Date(),
+        },
+      },
+    );
+    res.json({ status: "verified" });
+  } catch (e) {
+    next(e);
+  }
+}

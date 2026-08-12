@@ -16,6 +16,7 @@ export function decideKyc(cook) {
   const panOk = cook.tax?.verified === true && cook.tax?.name_matched === true;
   const bankOk = cook.bank?.verified === true;
   const fssaiNeedsReview = cook.fssai?.manual_review_required !== false;
+  const aadhaarOk = cook.aadhaar?.status === "verified";
 
   const bankScore =
     typeof cook.bank?.fuzzy_match_score === "number"
@@ -24,7 +25,7 @@ export function decideKyc(cook) {
   const panScore = cook.tax?.name_matched === true ? 1 : 0;
   const score = Math.min(panScore, bankScore);
 
-  const allOk = panOk && bankOk && !fssaiNeedsReview;
+  const allOk = panOk && bankOk && !fssaiNeedsReview && aadhaarOk;
   const decision =
     allOk && score >= MATCH_THRESHOLD ? "approved" : "manual_review";
 
