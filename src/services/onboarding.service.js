@@ -126,3 +126,23 @@ export async function getStatus(cookId) {
     kycDecision: cook.kyc?.decision ?? null,
   };
 }
+function getVerificationSummary(step, update) {
+  switch (step) {
+    case "tax":
+      return { verified: update["tax.verified"] === true, label: "PAN" };
+    case "bank":
+      return {
+        verified: update["bank.verified"] === true,
+        label: "Bank Account",
+      };
+    case "fssai":
+      return {
+        verified:
+          update["fssai.active"] === true &&
+          update["fssai.manual_review_required"] !== true,
+        label: "FSSAI License",
+      };
+    default:
+      return null;
+  }
+}
