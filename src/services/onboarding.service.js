@@ -54,8 +54,17 @@ async function mapStep(step, data, cook) {
         "bank.error_msg": result.error_msg,
       };
     }
-    case "fssai":
-      return { "fssai.license_masked": maskFssai(data.license) };
+    case "fssai": {
+      const result = await KycService.verifyFssai(data.license);
+      return {
+        "fssai.license_masked": maskFssai(data.license),
+        "fssai.active": result.active,
+        "fssai.registered_name": result.registered_name,
+        "fssai.expiry": result.expiry,
+        "fssai.ref_id": result.ref_id,
+        "fssai.manual_review_required": result.manual_review_required,
+      };
+    }
     case "food":
       return {
         "food.cuisine": data.cuisine,
