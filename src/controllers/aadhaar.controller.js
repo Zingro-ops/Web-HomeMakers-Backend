@@ -34,12 +34,13 @@ export async function createRequest(req, res, next) {
 }
 
 // Digio calls this when the user completes (or abandons) the Aadhaar flow.
+// Digio calls this when the user completes (or abandons) the Aadhaar flow.
 export async function webhook(req, res) {
+  console.log("AADHAAR WEBHOOK RECEIVED:", JSON.stringify(req.body, null, 2));
   try {
     const payload = req.body?.payload;
     const requestId = payload?.request_id || payload?.id;
     const status = payload?.status;
-
     if (requestId) {
       await Cook.updateOne(
         { "aadhaar.request_id": requestId },
@@ -48,7 +49,6 @@ export async function webhook(req, res) {
         },
       );
     }
-
     res.status(200).send("ok"); // Digio expects a fast 200, per their docs
   } catch (e) {
     console.error("Aadhaar webhook error:", e);
