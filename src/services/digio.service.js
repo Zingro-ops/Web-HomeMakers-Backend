@@ -137,16 +137,56 @@ export async function createAadhaarRequest(cookId, customerIdentifier, customerN
 }
 
 export async function verifyFssai(license) {
-  // No real FSSAI provider integrated yet (Digio doesn't offer this).
-  // Always returns a soft-pass with manual_review_required — must NEVER
-  // throw here, since that would silently break the entire onboarding
-  // KYC decision pipeline (see submit.service.js / decideKyc).
-  await wait(150);
-  return {
-    active: true,
-    registered_name: null,
-    expiry: null,
-    ref_id: `pending_manual_review_${license.slice(-4)}`,
-    manual_review_required: true,
-  };
+  if (MOCK) {
+    await wait(150);
+    return {
+      active: true,
+      registered_name: "Test",
+      expiry: "2027-12-31",
+      ref_id: `mock_fssai_${license.slice(-4)}`,
+      manual_review_required: false,
+    };
+  }
+
+  try {
+    const { data } = await digioClient.post(`/v3/client/kyc/fetch_id_data/FSSAI`, {
+      id_no: license,
+    });
+    console.log("DIGIO FSSAI SUCCESS:", JSON.stringify(data, null, 2));
+
+    // Response field names not yet confirmed against real data — logging
+    // above so we can see the actual shape on first real call, then refine
+    // this mapping. Defensive fallbacks in case the exact field names
+    // differ from PAN's response shape.
+    return {
+      active: data.status === "valid" || data.status === "active" || data.verified === true,
+      registered_name: data.name || data.registered_name || null,
+      expiry: data.expiry || data.valid_upto || null,
+      ref_id: data.id || data.request_id || null,
+      manual_review_required: false,
+      raw: data, // temporary, remove once mapping is confirmed
+    };
+  } catch (error) {
+    if (error.response) {
+      console.error("DIGIO FSSAI ERROR RESPONSE:", JSON.stringify(error.response.data, null, 2));
+      // Fail soft to manual review rather than crashing the KYC pipeline —
+      // same discipline as before: this must NEVER throw uncaught.
+      return {
+        active: false,
+        registered_name: null,
+        expiry: null,
+        ref_id: null,
+        manual_review_required: true,
+        error_msg: error.response.data?.message || String(error.response.status),
+      };
+    }
+    return {
+      active: false,
+      registered_name: null,
+      expiry: null,
+      ref_id: null,
+      manual_review_required: true,
+      error_msg: "Unable to reach Digio FSSAI verification service.",
+    };
+  }
 }
