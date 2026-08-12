@@ -27,14 +27,11 @@ export async function verifyPan(pan, name, dob) {
   }
 
   try {
-    const { data } = await digioClient.post(
-      "/v3/client/kyc/fetch_id_data/PAN",
-      {
-        id_no: pan,
-        name,
-        dob, // must be dd/MM/yyyy
-      },
-    );
+    const { data } = await digioClient.post("/v3/client/kyc/fetch_id_data/PAN", {
+      id_no: pan,
+      name,
+      dob, // must be dd/MM/yyyy
+    });
 
     return {
       verified: data.status === "valid" && data.name_as_per_pan_match === true,
@@ -47,16 +44,11 @@ export async function verifyPan(pan, name, dob) {
   } catch (error) {
     if (error.response) {
       throw Object.assign(
-        new Error(
-          `Digio PAN verification failed: ${error.response.data?.remarks || error.response.status}`,
-        ),
+        new Error(`Digio PAN verification failed: ${error.response.data?.remarks || error.response.status}`),
         { status: 502 },
       );
     }
-    throw Object.assign(
-      new Error("Unable to reach Digio PAN verification service."),
-      { status: 502 },
-    );
+    throw Object.assign(new Error("Unable to reach Digio PAN verification service."), { status: 502 });
   }
 }
 
@@ -90,28 +82,17 @@ export async function verifyBank(account, ifsc, holderName) {
     };
   } catch (error) {
     if (error.response) {
-      console.error(
-        "DIGIO BANK ERROR RESPONSE:",
-        JSON.stringify(error.response.data, null, 2),
-      );
+      console.error("DIGIO BANK ERROR RESPONSE:", JSON.stringify(error.response.data, null, 2));
       throw Object.assign(
-        new Error(
-          `Digio bank verification failed: ${error.response.data?.error_msg || error.response.status}`,
-        ),
+        new Error(`Digio bank verification failed: ${error.response.data?.error_msg || error.response.status}`),
         { status: 502 },
       );
     }
-    throw Object.assign(
-      new Error("Unable to reach Digio bank verification service."),
-      { status: 502 },
-    );
+    throw Object.assign(new Error("Unable to reach Digio bank verification service."), { status: 502 });
   }
 }
-export async function createAadhaarRequest(
-  cookId,
-  customerIdentifier,
-  customerName,
-) {
+
+export async function createAadhaarRequest(cookId, customerIdentifier, customerName) {
   if (MOCK) {
     await wait(150);
     return {
@@ -132,14 +113,10 @@ export async function createAadhaarRequest(
       generate_access_token: true,
       expire_in_days: 10,
     };
-    console.log(
-      "DIGIO AADHAAR REQUEST PAYLOAD:",
-      JSON.stringify(payload, null, 2),
-    );
-    const { data } = await digioClient.post(
-      "/client/kyc/v2/request/with_template",
-      payload,
-    );
+    console.log("DIGIO AADHAAR REQUEST PAYLOAD:", JSON.stringify(payload, null, 2));
+
+    const { data } = await digioClient.post("/client/kyc/v2/request/with_template", payload);
+    console.log("DIGIO AADHAAR SUCCESS:", JSON.stringify(data, null, 2));
 
     return {
       id: data.id,
@@ -149,14 +126,9 @@ export async function createAadhaarRequest(
     };
   } catch (error) {
     if (error.response) {
-      console.error(
-        "DIGIO ERROR RESPONSE:",
-        JSON.stringify(error.response.data, null, 2),
-      );
+      console.error("DIGIO ERROR RESPONSE:", JSON.stringify(error.response.data, null, 2));
       throw Object.assign(
-        new Error(
-          `Digio Aadhaar request creation failed: ${error.response.data?.error_msg || error.response.status}`,
-        ),
+        new Error(`Digio Aadhaar request creation failed: ${error.response.data?.error_msg || error.response.status}`),
         { status: 502 },
       );
     }
