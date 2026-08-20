@@ -43,6 +43,9 @@ const cookSchema = new Schema(
       request_id: String,
       status: String,
       updated_at: Date,
+      verified_at: Date, // was being written by aadhaar.controller.js but
+      // silently dropped by Mongoose's strict mode since it was never
+      // declared here — now it actually persists.
     },
     bank: {
       masked: String,

@@ -1,8 +1,11 @@
 import { Cook } from "../models/Cook.js";
 import { presignGet } from "./s3.service.js";
+import { decideKyc } from "./kyc.service.js";
 
 const LIST_FIELDS =
-  "phone email status currentStep personal.name food.cuisine kyc.name_match_score kyc.decision createdAt updatedAt";
+  "phone email status currentStep personal.name food.cuisine kyc.name_match_score kyc.decision aadhaar.status createdAt updatedAt";
+// Added aadhaar.status to the list projection so the cooks list can show
+// Aadhaar state per row too, not just on the detail screen.
 
 export async function listCooks({ status, page, limit }) {
   const filter = status ? { status } : {};
@@ -29,7 +32,12 @@ export async function getCookDetail(id) {
   if (cook.photos?.profile_s3_key)
     photos.profile = await presignGet(cook.photos.profile_s3_key);
 
-  return { ...cook, photoUrls: photos };
+  // Computed verdict — same threshold/logic the system actually uses to
+  // decide approval, so the admin sees the real automated decision instead
+  // of eyeballing raw fields and guessing.
+  const kycVerdict = decideKyc(cook);
+
+  return { ...cook, photoUrls: photos, kycVerdict };
 }
 
 export async function decideCook(id, adminId, { decision, note }) {
