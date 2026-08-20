@@ -77,7 +77,17 @@ export function createApp() {
   );
   app.use("/api/auth", authRoutes);
 
+  // IMPORTANT: aadhaarRoutes must be mounted BEFORE onboardingRoutes.
+  // Both share the "/api/onboarding" path prefix, and Express dispatches
+  // by registration order + prefix match — not by specificity. If
+  // onboardingRoutes (which gates everything behind requireAuth) is
+  // registered first, every request to /api/onboarding/aadhaar/* gets
+  // routed into it first and the public webhook never reaches its own
+  // router. This previously caused Digio's webhook calls to be silently
+  // rejected with 401, since the webhook is intentionally unauthenticated.
+  app.use("/api/onboarding/aadhaar", aadhaarRoutes);
   app.use("/api/onboarding", onboardingRoutes);
+
   app.use("/api/uploads", uploadRoutes);
 
   app.use("/api/admin", adminRoutes);
@@ -105,7 +115,6 @@ export function createApp() {
   app.use("/api/v1/referral", referralRoutes);
   app.use("/api/v1/payment", paymentRoutes); // customer-facing
   app.use("/api/cook/payouts", payoutRoutes); // homemaker-facing, matches your existing /api/cook/* convention
-  app.use("/api/onboarding/aadhaar", aadhaarRoutes);
   app.use(notFound);
   app.use(errorHandler);
   return app;
