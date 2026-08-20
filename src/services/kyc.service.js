@@ -17,15 +17,27 @@ export const KycService = {
   verifyFssai: (license) => digio.verifyFssai(license),
   createAadhaarRequest: (cookId, customerIdentifier, customerName) =>
     digio.createAadhaarRequest(cookId, customerIdentifier, customerName),
-  getAadhaarStatus: (requestId) => digio.getRequestStatus(requestId),
+  getAadhaarStatus: (requestId, detailResponse = false) =>
+    digio.getRequestStatus(requestId, detailResponse),
 };
 
 // Pure decision: reads the Cook's already-stored real verification results.
+// NOTE: this is a recommendation surfaced to admins (AdminCookDetail's
+// "Computed verdict"), never an authority that sets cook.status directly —
+// see submit.service.js. Every application always requires an explicit
+// human decision via decideCook().
 export function decideKyc(cook) {
   const panOk = cook.tax?.verified === true && cook.tax?.name_matched === true;
   const bankOk = cook.bank?.verified === true;
   const fssaiNeedsReview = cook.fssai?.manual_review_required !== false;
   const aadhaarOk = AADHAAR_SUCCESS_STATUSES.includes(cook.aadhaar?.status);
+
+  // Identity cross-match (Aadhaar OCR name vs. the name used for PAN) is
+  // informational only for now — its extraction path is still provisional
+  // (see aadhaar.controller.js), so a missing/null score is NOT treated as
+  // a failure here. Only an explicitly LOW score counts against the verdict.
+  const identityScore = cook.aadhaar?.identity_match_score;
+  const identityOk = identityScore == null || identityScore >= MATCH_THRESHOLD;
 
   const bankScore =
     typeof cook.bank?.fuzzy_match_score === "number"
@@ -34,7 +46,7 @@ export function decideKyc(cook) {
   const panScore = cook.tax?.name_matched === true ? 1 : 0;
   const score = Math.min(panScore, bankScore);
 
-  const allOk = panOk && bankOk && !fssaiNeedsReview && aadhaarOk;
+  const allOk = panOk && bankOk && !fssaiNeedsReview && aadhaarOk && identityOk;
   const decision =
     allOk && score >= MATCH_THRESHOLD ? "approved" : "manual_review";
 

@@ -4,6 +4,7 @@ import {
   AADHAAR_TERMINAL_FAILURE_STATUSES,
 } from "../services/kyc.service.js";
 import { Cook } from "../models/Cook.js";
+import { nameMatchScore } from "../utils/nameMatch.js";
 
 export async function createRequest(req, res, next) {
   try {
@@ -66,13 +67,40 @@ export async function webhook(req, res) {
   }
 }
 
+// Extracts the OCR'd name/DOB from a detail_response=true Digio payload.
+//
+// ⚠️ PROVISIONAL: this path (actions[].ocr_result.name / .dob) is based on
+// Digio's *documented* schema, not a real response confirmed from this
+// account. Logs the raw actions array so the real shape can be verified
+// against actual data — if this path is wrong, extraction just silently
+// yields null (no crash), which shows up as "unknown" everywhere identity
+// match is used, never as a false failure.
+function extractAadhaarOcr(digioDetailResult) {
+  const actions = digioDetailResult?.actions || [];
+  const idAction = actions.find(
+    (a) => a.type === "digilocker" || a.type === "aadhaar_verification",
+  );
+  const ocr = idAction?.ocr_result;
+  if (!ocr) {
+    console.warn(
+      "AADHAAR OCR EXTRACTION: no ocr_result found. Raw actions:",
+      JSON.stringify(actions, null, 2),
+    );
+    return { name: null, dob: null };
+  }
+  return { name: ocr.name || null, dob: ocr.dob || null };
+}
+
 // Called by the frontend after the Digio widget's client-side callback
 // fires. Rather than trusting the client (or waiting on a webhook that may
-// never arrive — e.g. misconfigured, unreachable in dev), this actively
-// asks Digio directly for the real, current status of the request.
+// never arrive), this actively asks Digio directly for the real, current
+// status of the request — and on success, also fetches OCR detail to
+// cross-check identity against the name used for PAN verification.
 export async function confirm(req, res, next) {
   try {
-    const cook = await Cook.findById(req.cookId).select("aadhaar").lean();
+    const cook = await Cook.findById(req.cookId)
+      .select("aadhaar personal")
+      .lean();
     if (!cook) return res.status(404).json({ error: "Cook not found" });
 
     const requestId = cook.aadhaar?.request_id;
@@ -82,22 +110,36 @@ export async function confirm(req, res, next) {
         .json({ error: "No Aadhaar request found for this account." });
     }
 
-    // Already confirmed by a previous call or by the webhook — no need to
-    // hit Digio again.
     if (AADHAAR_SUCCESS_STATUSES.includes(cook.aadhaar?.status)) {
       return res.json({ status: "verified" });
     }
 
-    const digioResult = await KycService.getAadhaarStatus(requestId);
+    // Request detail_response=true so we get OCR data for the identity
+    // cross-match, not just the bare status.
+    const digioResult = await KycService.getAadhaarStatus(requestId, true);
     const digioStatus = digioResult.status;
 
     const update = {
       "aadhaar.status": digioStatus,
       "aadhaar.updated_at": new Date(),
     };
+
     if (AADHAAR_SUCCESS_STATUSES.includes(digioStatus)) {
       update["aadhaar.verified_at"] = new Date();
+
+      const { name: ocrName, dob: ocrDob } = extractAadhaarOcr(digioResult);
+      if (ocrName) {
+        update["aadhaar.ocr_name"] = ocrName;
+        update["aadhaar.identity_match_score"] = nameMatchScore(
+          ocrName,
+          cook.personal?.name,
+        );
+      }
+      if (ocrDob) {
+        update["aadhaar.ocr_dob"] = ocrDob;
+      }
     }
+
     await Cook.updateOne({ _id: req.cookId }, { $set: update });
 
     if (AADHAAR_SUCCESS_STATUSES.includes(digioStatus)) {
@@ -111,7 +153,6 @@ export async function confirm(req, res, next) {
       });
     }
 
-    // Still in progress (requested / approval_pending / skipped-but-retryable)
     return res.json({
       status: "pending",
       message: "Aadhaar verification is still in progress with Digio.",
