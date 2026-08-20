@@ -1,11 +1,10 @@
 import { Cook } from "../models/Cook.js";
 import { presignGet } from "./s3.service.js";
 import { decideKyc } from "./kyc.service.js";
+import { sendApprovalEmail } from "./mail.service.js";
 
 const LIST_FIELDS =
   "phone email status currentStep personal.name food.cuisine kyc.name_match_score kyc.decision aadhaar.status createdAt updatedAt";
-// Added aadhaar.status to the list projection so the cooks list can show
-// Aadhaar state per row too, not just on the detail screen.
 
 export async function listCooks({ status, page, limit }) {
   const filter = status ? { status } : {};
@@ -57,5 +56,14 @@ export async function decideCook(id, adminId, { decision, note }) {
     note,
   };
   await cook.save();
+
+  // Fire-and-forget — never let email delivery block or delay the admin's
+  // approval response. Failures are logged inside sendApprovalEmail itself.
+  if (decision === "approved") {
+    sendApprovalEmail(cook).catch((e) =>
+      console.error("Unexpected error sending approval email:", e),
+    );
+  }
+
   return { id: cook._id, status: cook.status, decision };
 }
