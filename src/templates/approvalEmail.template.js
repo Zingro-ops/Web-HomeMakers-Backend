@@ -61,22 +61,7 @@ export function approvalEmailHtml({ cookName, dashboardUrl }) {
                 </tr>
               </table>
 
-              <!-- Next steps -->
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#fff6ea; border-radius:12px; padding:4px;">
-                <tr>
-                  <td style="padding:16px 20px;">
-                    <p style="margin:0 0 10px; color:#1a1205; font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em;">
-                      What's next
-                    </p>
-                    ${listItem("1", "Add your first dish to your menu")}
-                    ${listItem("2", "Set your kitchen's open hours")}
-                    ${listItem("3", "Start receiving orders from your neighbourhood")}
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-
+              
           <!-- Footer -->
           <tr>
             <td style="padding:24px 32px; border-top:1px solid #f0eae0; text-align:center;">
