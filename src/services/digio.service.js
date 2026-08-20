@@ -167,6 +167,48 @@ export async function createAadhaarRequest(
   }
 }
 
+// Get Status API — POST {BASE_URL}/client/kyc/v2/{id}/response
+// Actively fetches the current state of a request from Digio directly,
+// instead of relying solely on their webhook reaching us. Terminal
+// success status per Digio's documented enum is "approved" — NOT
+// "verified" (there is no "verified" value in their API at all).
+export async function getRequestStatus(requestId, detailResponse = false) {
+  if (MOCK) {
+    await wait(150);
+    return { id: requestId, status: "approved", actions: [] };
+  }
+
+  try {
+    const { data } = await digioClient.post(
+      `/client/kyc/v2/${requestId}/response`,
+      null,
+      { params: { detail_response: detailResponse } },
+    );
+    console.log(
+      "DIGIO STATUS CHECK:",
+      JSON.stringify({ id: data.id, status: data.status }, null, 2),
+    );
+    return data;
+  } catch (error) {
+    if (error.response) {
+      console.error(
+        "DIGIO STATUS CHECK ERROR:",
+        JSON.stringify(error.response.data, null, 2),
+      );
+      throw Object.assign(
+        new Error(
+          `Digio status check failed: ${error.response.data?.error_msg || error.response.status}`,
+        ),
+        { status: 502 },
+      );
+    }
+    throw Object.assign(
+      new Error("Unable to reach Digio status check service."),
+      { status: 502 },
+    );
+  }
+}
+
 export async function verifyFssai(license) {
   if (MOCK) {
     await wait(150);

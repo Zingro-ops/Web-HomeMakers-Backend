@@ -1,4 +1,8 @@
-import { KycService } from "../services/kyc.service.js";
+import {
+  KycService,
+  AADHAAR_SUCCESS_STATUSES,
+  AADHAAR_TERMINAL_FAILURE_STATUSES,
+} from "../services/kyc.service.js";
 import { Cook } from "../models/Cook.js";
 
 export async function createRequest(req, res, next) {
@@ -34,7 +38,8 @@ export async function createRequest(req, res, next) {
 }
 
 // Digio calls this when the user completes (or abandons) the Aadhaar flow.
-// This is the source of truth for verification status.
+// Kept as a fast-path update when it does reach us, but `confirm` below no
+// longer depends on this alone — it actively polls Digio's own status API.
 export async function webhook(req, res) {
   console.log("AADHAAR WEBHOOK RECEIVED:", JSON.stringify(req.body, null, 2));
   try {
@@ -46,7 +51,7 @@ export async function webhook(req, res) {
         "aadhaar.status": status,
         "aadhaar.updated_at": new Date(),
       };
-      if (status === "verified") {
+      if (AADHAAR_SUCCESS_STATUSES.includes(status)) {
         update["aadhaar.verified_at"] = new Date();
       }
       await Cook.updateOne(
@@ -61,32 +66,55 @@ export async function webhook(req, res) {
   }
 }
 
-// Called by the frontend right after the Digio widget's client-side
-// callback fires. This is NOT proof of verification on its own — a client
-// can call this endpoint directly without ever completing Aadhaar. The
-// actual source of truth is `aadhaar.status`, which only the webhook (a
-// server-to-server call from Digio) is allowed to set to "verified".
-//
-// So this endpoint now just reads back whatever the webhook has already
-// recorded, rather than unconditionally overwriting it to "verified".
+// Called by the frontend after the Digio widget's client-side callback
+// fires. Rather than trusting the client (or waiting on a webhook that may
+// never arrive — e.g. misconfigured, unreachable in dev), this actively
+// asks Digio directly for the real, current status of the request.
 export async function confirm(req, res, next) {
   try {
     const cook = await Cook.findById(req.cookId).select("aadhaar").lean();
     if (!cook) return res.status(404).json({ error: "Cook not found" });
 
-    const status = cook.aadhaar?.status;
+    const requestId = cook.aadhaar?.request_id;
+    if (!requestId) {
+      return res
+        .status(409)
+        .json({ error: "No Aadhaar request found for this account." });
+    }
 
-    if (status === "verified") {
+    // Already confirmed by a previous call or by the webhook — no need to
+    // hit Digio again.
+    if (AADHAAR_SUCCESS_STATUSES.includes(cook.aadhaar?.status)) {
       return res.json({ status: "verified" });
     }
 
-    // Webhook hasn't landed yet (common — client callback often fires
-    // before the server-to-server webhook, especially locally). Don't
-    // fabricate success; tell the frontend to poll or show a pending state.
+    const digioResult = await KycService.getAadhaarStatus(requestId);
+    const digioStatus = digioResult.status;
+
+    const update = {
+      "aadhaar.status": digioStatus,
+      "aadhaar.updated_at": new Date(),
+    };
+    if (AADHAAR_SUCCESS_STATUSES.includes(digioStatus)) {
+      update["aadhaar.verified_at"] = new Date();
+    }
+    await Cook.updateOne({ _id: req.cookId }, { $set: update });
+
+    if (AADHAAR_SUCCESS_STATUSES.includes(digioStatus)) {
+      return res.json({ status: "verified" });
+    }
+
+    if (AADHAAR_TERMINAL_FAILURE_STATUSES.includes(digioStatus)) {
+      return res.json({
+        status: "failed",
+        message: `Aadhaar verification ${digioStatus}. Please try again.`,
+      });
+    }
+
+    // Still in progress (requested / approval_pending / skipped-but-retryable)
     return res.json({
-      status: status || "pending",
-      message:
-        "Aadhaar verification is still being confirmed by Digio. This can take a few seconds.",
+      status: "pending",
+      message: "Aadhaar verification is still in progress with Digio.",
     });
   } catch (e) {
     next(e);
