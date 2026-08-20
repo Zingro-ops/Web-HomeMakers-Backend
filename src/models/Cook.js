@@ -28,6 +28,9 @@ const cookSchema = new Schema(
     personal: { name: String, gender: String },
     address: { building: String, locality: String, pincode: String },
     tax: {
+      name: String, // name as confirmed on the Tax Details step — may
+      // differ from personal.name (middle name/initials to match the PAN
+      // card exactly). This is what PAN is actually verified against.
       masked: String,
       dob: String,
       gst: String,
@@ -44,12 +47,6 @@ const cookSchema = new Schema(
       status: String,
       updated_at: Date,
       verified_at: Date,
-      // Cross-document identity check — OCR'd directly from the Aadhaar
-      // document during the DigiLocker session, compared against
-      // cook.personal.name (the name used for PAN verification) to catch
-      // cases where PAN and Aadhaar don't actually belong to the same
-      // person. Field path this comes from is provisional — see
-      // aadhaar.controller.js for the extraction logic and its caveats.
       ocr_name: String,
       ocr_dob: String,
       identity_match_score: Number, // 0..1, from utils/nameMatch.js

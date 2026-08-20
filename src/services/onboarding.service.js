@@ -20,13 +20,14 @@ async function mapStep(step, data, cook) {
         "address.pincode": data.pincode,
       };
     case "tax": {
-      const enteredName = cook.personal?.name || "";
-      const result = await KycService.verifyPan(
-        data.pan,
-        enteredName,
-        data.dob,
-      );
+      // Prefer the name confirmed specifically on this step (matches the
+      // PAN card exactly, per TaxDetails.jsx) — falls back to
+      // personal.name only if somehow not provided, for backward
+      // compatibility with drafts saved before this field existed.
+      const panName = data.name || cook.personal?.name || "";
+      const result = await KycService.verifyPan(data.pan, panName, data.dob);
       return {
+        "tax.name": panName,
         "tax.masked": maskPan(data.pan),
         "tax.dob": data.dob,
         "tax.gst": data.gst || "",

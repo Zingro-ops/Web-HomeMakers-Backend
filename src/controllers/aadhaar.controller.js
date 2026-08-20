@@ -99,7 +99,7 @@ function extractAadhaarOcr(digioDetailResult) {
 export async function confirm(req, res, next) {
   try {
     const cook = await Cook.findById(req.cookId)
-      .select("aadhaar personal")
+      .select("aadhaar personal tax")
       .lean();
     if (!cook) return res.status(404).json({ error: "Cook not found" });
 
@@ -132,7 +132,7 @@ export async function confirm(req, res, next) {
         update["aadhaar.ocr_name"] = ocrName;
         update["aadhaar.identity_match_score"] = nameMatchScore(
           ocrName,
-          cook.personal?.name,
+          cook.tax?.name || cook.personal?.name,
         );
       }
       if (ocrDob) {

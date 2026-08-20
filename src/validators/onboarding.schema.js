@@ -16,6 +16,9 @@ export const stepSchemas = {
     pincode: z.string().regex(/^\d{6}$/, "Invalid pincode"),
   }),
   tax: z.object({
+    // Name as it appears on the PAN card — may differ from personal.name
+    // (middle name, initials). This is what PAN gets verified against.
+    name: z.string().min(2),
     pan: z.string().regex(PAN, "Invalid PAN"),
     dob: z
       .string()
