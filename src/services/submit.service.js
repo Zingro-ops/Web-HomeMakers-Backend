@@ -46,12 +46,19 @@ async function runBatchKyc(cookId) {
 
   const { decision, score } = decideKyc(cook);
 
+  // `decision`/`score` are stored as a *recommendation* for the admin
+  // reviewing this application (surfaced in AdminCookDetail's "Computed
+  // verdict") — they must NEVER be allowed to set status to "approved"
+  // on their own. Zingro carries liability for who's allowed to sell food
+  // and receive payouts on the platform; that decision requires a human
+  // to actually click Approve via decideCook(), regardless of how clean
+  // the automated checks look. Every submission lands in manual_review.
   cook.kyc = {
     name_match_score: score,
-    decision,
+    decision, // recommendation only — "approved" here does NOT set cook.status
     decided_at: new Date(),
     decided_by: "system",
   };
-  cook.status = decision === "approved" ? "approved" : "manual_review";
+  cook.status = "manual_review";
   await cook.save();
 }
