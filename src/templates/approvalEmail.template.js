@@ -45,10 +45,7 @@ export function approvalEmailHtml({ cookName, dashboardUrl }) {
                 Good news — your Zingro homemaker application has been reviewed and approved.
                 Your kitchen is now verified and visible to customers near you.
               </p>
-              <p style="margin:0 0 24px; color:#5c4f3d; font-size:15px; line-height:1.65;">
-                You can start adding dishes, setting your hours, and receiving orders right away
-                from your dashboard.
-              </p>
+              
 
               <!-- CTA button -->
               <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 28px;">
