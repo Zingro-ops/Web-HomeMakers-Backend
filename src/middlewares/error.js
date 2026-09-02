@@ -9,7 +9,14 @@ export function errorHandler(err, req, res, next) {
       .json({ error: "Validation failed", details: err.issues });
   }
   if (err?.code === 11000) {
-    return res.status(409).json({ error: "Email or phone already registered" });
+    const field =
+      Object.keys(err.keyPattern || err.keyValue || {})[0] || "field";
+    const value = err.keyValue?.[field];
+    console.error("Duplicate key:", field, value, err.keyValue);
+    return res.status(409).json({
+      error: `${field} already exists`,
+      field,
+    });
   }
   if (err?.name === "CastError") {
     return res.status(400).json({ error: "Invalid ID format" });
