@@ -7,13 +7,11 @@ export async function requireCook(req, res, next) {
       .json({ error: "This action requires a homemaker account" });
   }
   try {
-    let cook = await Cook.findOne({ zingroUserId: req.user.id });
-    if (!cook) {
-      cook = await Cook.create({
-        zingroUserId: req.user.id,
-        phone: req.user.phone,
-      });
-    }
+    const cook = await Cook.findOneAndUpdate(
+      { zingroUserId: req.user.id },
+      { $setOnInsert: { zingroUserId: req.user.id, phone: req.user.phone } },
+      { upsert: true, new: true, setDefaultsOnInsert: true },
+    );
     req.cookId = cook._id.toString();
     next();
   } catch (e) {
