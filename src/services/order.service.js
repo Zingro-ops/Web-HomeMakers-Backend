@@ -7,6 +7,7 @@ import { completeReferralIfEligible } from "./referral.service.js";
 import { Cart } from "../models/Cart.js";
 
 const TRANSITIONS = {
+  pending: ["preparing", "rejected"],
   accepted: ["preparing", "rejected"],
   preparing: ["ready"],
   ready: ["completed"],
