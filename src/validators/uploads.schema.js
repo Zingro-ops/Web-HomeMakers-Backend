@@ -6,6 +6,6 @@ export const presignSchema = z.object({
 });
 
 export const confirmSchema = z.object({
-  type: z.enum(["kitchen", "profile", "orderReady"]),
+  type: z.enum(["kitchen", "profile", "orderReady", "dish"]),
   key: z.string().min(5),
 });
