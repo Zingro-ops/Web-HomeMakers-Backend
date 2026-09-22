@@ -11,7 +11,7 @@ export async function listCooks({ status, page, limit }) {
   const [items, total] = await Promise.all([
     Cook.find(filter)
       .select(LIST_FIELDS)
-      .sort({ updatedAt: -1 })
+      .sort({ currentStep: -1, updatedAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
       .lean(),
