@@ -5,7 +5,8 @@
   "main": "src/server.js",
   "scripts": {
     "dev": "node --watch src/server.js",
-    "start": "node src/server.js"
+    "start": "node src/server.js",
+    "test": "cd test && node --test --test-concurrency=1 --test-reporter=spec"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1075.0",
@@ -26,6 +27,8 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "express-list-endpoints": "^7.1.1"
+    "express-list-endpoints": "^7.1.1",
+    "mongodb-memory-server": "^10.4.3",
+    "supertest": "^7.3.2"
   }
 }
