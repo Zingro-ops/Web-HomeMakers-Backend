@@ -4,6 +4,11 @@ import { Payment } from "../models/Payment.js";
 import { razorpay } from "./razorpay.client.js";
 import { completeReferralIfEligible } from "./referral.service.js";
 import { Cart } from "../models/Cart.js";
+import {
+  summarizePayment,
+  refreshRefundIfInFlight,
+  latestPaymentsByOrder,
+} from "./paymentState.service.js";
 
 const TRANSITIONS = {
   pending: ["preparing", "rejected"],
@@ -26,7 +31,14 @@ export async function listCustomerOrders(customerId, { page, limit }) {
       .lean(),
     Order.countDocuments(filter),
   ]);
-  return { items, total, page, limit };
+  // Additive field: each order carries the server's view of its payment and
+  // refund, so the app never has to guess (no gateway calls on list views).
+  const payments = await latestPaymentsByOrder(items.map((o) => o._id));
+  const withPayment = items.map((o) => ({
+    ...o,
+    payment: summarizePayment(o, payments.get(String(o._id))),
+  }));
+  return { items: withPayment, total, page, limit };
 }
 
 export async function listCookOrders(
@@ -90,7 +102,20 @@ export async function getById(customerId, orderId) {
   const order = await Order.findOne({ _id: orderId, customerId });
   if (!order)
     throw Object.assign(new Error("Order not found"), { status: 404 });
-  return order;
+  return withPaymentState(order, { refresh: true });
+}
+
+/**
+ * Order JSON plus `payment` (see paymentState.service). With `refresh`, an
+ * in-flight refund is re-checked with Razorpay so "completed" is only ever
+ * shown after Razorpay itself reports the refund processed.
+ */
+async function withPaymentState(order, { refresh = false } = {}) {
+  let payment = await Payment.findOne({ orderId: order._id }).sort({
+    createdAt: -1,
+  });
+  if (refresh && payment) payment = await refreshRefundIfInFlight(payment);
+  return { ...order.toObject(), payment: summarizePayment(order, payment) };
 }
 
 export async function cancelOrder(customerId, orderId) {
@@ -114,8 +139,22 @@ export async function cancelOrder(customerId, orderId) {
         speed: "optimum",
         notes: { orderId: String(order._id), reason: "Cancelled by customer" },
       });
+      // Legacy field kept for compatibility; it means "refund requested".
       payment.status = "refunded";
       payment.refundId = refund.id;
+      // What Razorpay actually said. A just-created refund is normally
+      // "pending" (→ initiated); only "processed" means money is on its way.
+      payment.refundStatus =
+        refund.status === "processed"
+          ? "processed"
+          : refund.status === "failed"
+            ? "failed"
+            : "initiated";
+      payment.refundAmount =
+        typeof refund.amount === "number" ? refund.amount / 100 : payment.amount;
+      payment.refundInitiatedAt = new Date();
+      if (payment.refundStatus === "processed")
+        payment.refundProcessedAt = new Date();
       await payment.save();
     } catch (e) {
       console.error(
@@ -136,7 +175,7 @@ export async function cancelOrder(customerId, orderId) {
     ? `${order.notes} | Cancelled by customer`
     : "Cancelled by customer";
   await order.save();
-  return order;
+  return withPaymentState(order);
 }
 
 export async function reorder(customerId, orderId) {

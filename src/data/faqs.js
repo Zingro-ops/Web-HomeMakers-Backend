@@ -22,8 +22,12 @@ export const FAQS = [
     id: "4",
     category: "payments",
     question: "My payment failed but money was deducted. What do I do?",
+    // Do not promise an automatic refund here: Zingro has no payment webhook or
+    // reconciliation job yet, so nothing on our side guarantees one. Any
+    // reversal of an uncompleted payment is done by the bank/payment network,
+    // on their timeline. Revisit this copy once A5 (webhook + reconcile) ships.
     answer:
-      "Failed payments are usually auto-refunded within 5-7 business days. Contact support if not received.",
+      "Please don't pay again. Open My Orders to see the order's payment status. If it doesn't show as paid and money left your account, contact support with your payment ID (from your bank or UPI app) and we'll check it against our records. Some banks reverse incomplete payments on their own, but we can't promise a timeline for that.",
   },
   {
     id: "5",
