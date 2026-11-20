@@ -256,13 +256,25 @@ describe("raw-body signing, persistence and atomicity", () => {
       return send(s.raw, s.headers);
     });
     const results = await Promise.all(reqs);
-    const statuses = results.map((r) => r.status);
-    assert.ok(statuses.every((s) => s === 200), `statuses: ${statuses}`);
-    const applied = results.filter((r) => r.body.data?.duplicate === false);
+    // Each response is either: the one that applied it (200, duplicate:false),
+    // a duplicate of an ALREADY-APPLIED event (200, duplicate:true), or a
+    // retryable "still processing" (409 EVENT_IN_PROGRESS). A 200 is never
+    // given for an event that has not been applied.
+    for (const r of results) {
+      const okApplied = r.status === 200;
+      const inProgress = r.status === 409 && r.body.code === "EVENT_IN_PROGRESS";
+      assert.ok(okApplied || inProgress, `unexpected ${r.status} ${JSON.stringify(r.body)}`);
+      if (inProgress) assert.equal(r.headers["retry-after"], "30");
+    }
+    const applied = results.filter((r) => r.status === 200 && r.body.data?.duplicate === false);
     assert.equal(applied.length, 1, "exactly one request applies the event");
     const { CourierWebhookEvent } = await import("../src/models/CourierWebhookEvent.js");
-    assert.equal(await CourierWebhookEvent.countDocuments({ eventId: body.eventId }), 1);
-    assert.equal((await Order.findById(order._id)).status, "delivery_assigned");
+    const rows = await CourierWebhookEvent.find({ eventId: body.eventId });
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].state, "applied");
+    const after = await Order.findById(order._id);
+    assert.equal(after.status, "delivery_assigned");
+    assert.deepEqual(after.courierEventIds, [body.eventId], "applied exactly once");
   });
 
   test("concurrent DIFFERENT events racing the same transition: at most one wins", async () => {

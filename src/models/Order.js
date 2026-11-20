@@ -69,6 +69,12 @@ const orderSchema = new Schema(
       default: null,
     },
     couponDiscount: { type: Number, default: 0 },
+    // Ids of courier webhook events whose status change has been applied to
+    // this order. Written in the SAME atomic update as the status change, so
+    // "was this event applied?" is answerable from the order itself — which
+    // makes recovery after a crash idempotent (see deliveryTracking.service).
+    // Bounded to the most recent 50 entries.
+    courierEventIds: { type: [String], default: undefined },
   },
 
   { timestamps: true },

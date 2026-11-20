@@ -48,6 +48,9 @@ export const courierWebhook = async (req, res) => {
   } catch (e) {
     if (e instanceof z.ZodError)
       return fail(res, "Validation failed", 400, "VALIDATION");
+    // Retryable: another delivery of this event is mid-flight. A non-2xx makes
+    // the provider retry; it is never acknowledged as processed.
+    if (e?.code === "EVENT_IN_PROGRESS") res.set("Retry-After", "30");
     fail(res, e.status ? e.message : "Server error", e.status || 500, e.code);
   }
 };
