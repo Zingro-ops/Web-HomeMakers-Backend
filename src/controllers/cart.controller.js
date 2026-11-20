@@ -1,8 +1,4 @@
-import {
-  addItemSchema,
-  updateItemSchema,
-  checkoutSchema,
-} from "../validators/cart.schema.js";
+import { addItemSchema, updateItemSchema } from "../validators/cart.schema.js";
 import * as svc from "../services/cart.service.js";
 
 export async function get(req, res, next) {
@@ -47,12 +43,4 @@ export async function clear(req, res, next) {
   }
 }
 
-export async function checkout(req, res, next) {
-  try {
-    const data = checkoutSchema.parse(req.body);
-    const order = await svc.checkout(req.user, data);
-    res.status(201).json(order);
-  } catch (e) {
-    next(e);
-  }
-}
+// `checkout` (POST /api/cart/checkout) was removed: it created unpaid orders.

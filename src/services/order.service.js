@@ -1,6 +1,5 @@
 ﻿import { Order } from "../models/Order.js";
 import { Dish } from "../models/Dish.js";
-import { Cook } from "../models/Cook.js";
 import { Payment } from "../models/Payment.js";
 import { razorpay } from "./razorpay.client.js";
 import { completeReferralIfEligible } from "./referral.service.js";
@@ -13,52 +12,9 @@ const TRANSITIONS = {
   ready: ["completed"],
 };
 
-export async function createOrder(customer, data) {
-  const cook = await Cook.findOne({ _id: data.cookId, status: "approved" });
-  if (!cook) throw Object.assign(new Error("Cook not found"), { status: 404 });
-
-  const dishIds = data.items.map((i) => i.dishId);
-  const dishes = await Dish.find({
-    _id: { $in: dishIds },
-    cookId: data.cookId,
-    available: true,
-  });
-  const dishMap = new Map(dishes.map((d) => [d._id.toString(), d]));
-
-  const items = data.items.map((i) => {
-    const dish = dishMap.get(i.dishId);
-    if (!dish)
-      throw Object.assign(new Error(`Dish ${i.dishId} not available`), {
-        status: 400,
-      });
-    return { dishId: dish._id, name: dish.name, price: dish.price, qty: i.qty };
-  });
-
-  const totalQty = items.reduce((sum, i) => sum + i.qty, 0);
-  const subtotal = items.reduce((sum, i) => sum + i.price * i.qty, 0);
-
-  const cluster = cook.clusterSettings || {};
-  const isCluster =
-    !!cluster.enabled && totalQty >= (cluster.minQty || Infinity);
-  const clusterDiscountPercent = isCluster ? cluster.discountPercent || 0 : 0;
-  const total = Math.round(subtotal * (1 - clusterDiscountPercent / 100));
-
-  return Order.create({
-    cookId: data.cookId,
-    customerId: customer.id,
-    customerPhone: customer.phone,
-    customerName: data.customerName || null,
-    orderType: data.orderType,
-    scheduledFor: data.scheduledFor || null,
-    isCluster,
-    clusterDiscountPercent,
-    items,
-    subtotal,
-    total,
-    deliveryAddress: data.deliveryAddress,
-    notes: data.notes,
-  });
-}
+// `createOrder` was removed: it built an order with no payment. The only order
+// creation path is payment.service.createOrder, which is server-priced and
+// backed by a Razorpay order.
 
 export async function listCustomerOrders(customerId, { page, limit }) {
   const filter = { customerId };

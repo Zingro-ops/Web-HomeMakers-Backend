@@ -1,19 +1,11 @@
 ﻿import {
-  createOrderSchema,
   updateOrderStatusSchema,
   listOrdersSchema,
 } from "../validators/order.schema.js";
 import * as svc from "../services/order.service.js";
 
-export async function create(req, res, next) {
-  try {
-    const data = createOrderSchema.parse(req.body);
-    const order = await svc.createOrder(req.user, data);
-    res.status(201).json(order);
-  } catch (e) {
-    next(e);
-  }
-}
+// `create` (POST /api/orders) was removed: it created unpaid orders. Orders
+// are created only by payment.service.createOrder.
 
 export async function mine(req, res, next) {
   try {

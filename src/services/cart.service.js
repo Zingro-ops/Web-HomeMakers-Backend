@@ -1,7 +1,6 @@
 import { Cart } from "../models/Cart.js";
 import { Dish } from "../models/Dish.js";
 import { Cook } from "../models/Cook.js";
-import { createOrder } from "./order.service.js";
 
 async function hydrate(cart) {
   if (!cart || cart.items.length === 0) {
@@ -131,22 +130,5 @@ export async function clearCart(customerId) {
   return { cleared: true };
 }
 
-export async function checkout(customer, data) {
-  const cart = await Cart.findOne({ customerId: customer.id });
-  if (!cart || cart.items.length === 0) {
-    throw Object.assign(new Error("Cart is empty"), { status: 400 });
-  }
-
-  const order = await createOrder(customer, {
-    cookId: cart.cookId.toString(),
-    items: cart.items.map((i) => ({ dishId: i.dishId.toString(), qty: i.qty })),
-    ...data,
-  });
-
-  await Cart.findOneAndUpdate(
-    { customerId: customer.id },
-    { $set: { items: [], cookId: null } },
-  );
-
-  return order;
-}
+// `checkout` was removed: it converted the cart into an unpaid order. Paid
+// checkout lives in checkout.service (preview) + payment.service (order).
