@@ -37,7 +37,19 @@ import aadhaarRoutes from "./routes/aadhaar.routes.js";
 export function createApp() {
   const app = express();
   app.set("trust proxy", 1);
-  app.use(express.json());
+  app.use(
+    express.json({
+      limit: "100kb", // express's default, made explicit
+      // Keep the exact bytes for signed webhooks: HMAC must be computed over
+      // what the provider sent, not over a re-serialised object. Scoped to the
+      // webhook path so other requests don't pay for a second copy.
+      verify: (req, _res, buf) => {
+        if (req.originalUrl?.startsWith("/api/v1/delivery/webhook")) {
+          req.rawBody = Buffer.from(buf);
+        }
+      },
+    }),
+  );
   app.use(cookieParser());
   app.use(
     rateLimit({

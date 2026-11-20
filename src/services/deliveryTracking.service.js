@@ -1,4 +1,5 @@
 import { Order } from "../models/Order.js";
+import { CourierWebhookEvent } from "../models/CourierWebhookEvent.js";
 
 const DELIVERY_TRANSITIONS = {
   ready: ["delivery_assigned"],
@@ -14,42 +15,92 @@ const EVENT_TO_STATUS = {
   delivered: "delivered",
 };
 
-export async function handleCourierWebhook({
-  orderId,
-  event,
-  partner,
-  timestamp,
-}) {
+// Which current status each target status may be reached from.
+const FROM_STATUS = Object.fromEntries(
+  Object.entries(DELIVERY_TRANSITIONS).flatMap(([from, tos]) =>
+    tos.map((to) => [to, from]),
+  ),
+);
+
+const httpError = (status, message, code) =>
+  Object.assign(new Error(message), { status, code });
+
+/**
+ * Applies one AUTHENTICATED courier event (signature already verified by
+ * middleware, payload already schema-validated by the controller).
+ *
+ * Guarantees:
+ *  - Idempotent: the eventId is recorded under a unique index; a repeat is
+ *    acknowledged and NOT applied again.
+ *  - Only the forward delivery transitions are possible — a courier can never
+ *    move an order backwards, mark an unprepared order delivered, or touch
+ *    pending/rejected orders.
+ *  - Atomic: the status change is a conditional update on the expected current
+ *    status, so two concurrent events cannot both apply.
+ *  - Once a trackingId is bound to an order, events for a different trackingId
+ *    are refused (one courier job cannot overwrite another's order).
+ */
+export async function handleCourierWebhook({ eventId, orderId, event, partner }) {
   const status = EVENT_TO_STATUS[event];
-  if (!status)
-    throw Object.assign(new Error(`Unknown event: ${event}`), {
-      status: 400,
-      code: "UNKNOWN_EVENT",
-    });
+  if (!status) throw httpError(400, `Unknown event`, "UNKNOWN_EVENT");
 
-  const order = await Order.findById(orderId);
-  if (!order)
-    throw Object.assign(new Error("Order not found"), { status: 404 });
+  try {
+    await CourierWebhookEvent.create({ eventId, orderId, event });
+  } catch (e) {
+    if (e?.code === 11000) {
+      const order = await Order.findById(orderId).select("status");
+      if (!order) throw httpError(404, "Order not found");
+      return { order, duplicate: true };
+    }
+    throw e;
+  }
 
-  const allowed = DELIVERY_TRANSITIONS[order.status] || [];
-  if (!allowed.includes(status)) {
-    throw Object.assign(
-      new Error(`Cannot move order from ${order.status} to ${status}`),
-      { status: 409, code: "INVALID_TRANSITION" },
+  try {
+    const order = await Order.findById(orderId);
+    if (!order) throw httpError(404, "Order not found");
+
+    const boundTracking = order.deliveryPartner?.trackingId;
+    if (
+      boundTracking &&
+      partner?.trackingId &&
+      partner.trackingId !== boundTracking
+    ) {
+      throw httpError(409, "Tracking id does not match this order", "TRACKING_MISMATCH");
+    }
+
+    const from = FROM_STATUS[status];
+    if (order.status !== from) {
+      throw httpError(
+        409,
+        `Cannot move order from ${order.status} to ${status}`,
+        "INVALID_TRANSITION",
+      );
+    }
+
+    const set = { status };
+    if (partner) {
+      set.deliveryPartner = {
+        name: partner.name || order.deliveryPartner?.name || null,
+        phone: partner.phone || order.deliveryPartner?.phone || null,
+        trackingId: partner.trackingId || boundTracking || null,
+      };
+    }
+
+    const updated = await Order.findOneAndUpdate(
+      { _id: orderId, status: from },
+      { $set: set },
+      { new: true },
     );
+    if (!updated) {
+      throw httpError(409, "Order changed concurrently; retry", "CONCURRENT_UPDATE");
+    }
+    return { order: updated, duplicate: false };
+  } catch (e) {
+    // Release the event id when it was NOT applied, so a legitimate retry from
+    // the provider (e.g. after a transient DB error) can still succeed.
+    await CourierWebhookEvent.deleteOne({ eventId }).catch(() => {});
+    throw e;
   }
-
-  order.status = status;
-  if (partner) {
-    order.deliveryPartner = {
-      name: partner.name || order.deliveryPartner?.name || null,
-      phone: partner.phone || order.deliveryPartner?.phone || null,
-      trackingId:
-        partner.trackingId || order.deliveryPartner?.trackingId || null,
-    };
-  }
-  await order.save();
-  return order;
 }
 
 export async function getTrackingStatus(customerId, orderId) {
