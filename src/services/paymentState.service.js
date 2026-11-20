@@ -83,12 +83,16 @@ export async function refreshRefundIfInFlight(payment, { timeoutMs = 3000 } = {}
   if (!payment?.refundId || !payment.razorpayPaymentId) return payment;
   if (!["none", "initiated"].includes(payment.refundStatus ?? "none")) return payment;
 
+  let timer;
   try {
     const refund = await Promise.race([
       razorpay.payments.fetchRefund(payment.razorpayPaymentId, payment.refundId),
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("refund fetch timeout")), timeoutMs),
-      ),
+      new Promise((_, reject) => {
+        timer = setTimeout(
+          () => reject(new Error("refund fetch timeout")),
+          timeoutMs,
+        );
+      }),
     ]);
     const next = RAZORPAY_REFUND_TO_DB[refund?.status];
     if (next && next !== payment.refundStatus) {
@@ -98,6 +102,8 @@ export async function refreshRefundIfInFlight(payment, { timeoutMs = 3000 } = {}
     }
   } catch (e) {
     console.warn(`Refund status refresh failed for payment ${payment._id}: ${e.message}`);
+  } finally {
+    clearTimeout(timer);
   }
   return payment;
 }
